@@ -1,0 +1,174 @@
+/* -------------------------------------------------------------
+ * Penalty Clash - Core Game Stylesheet
+ * ------------------------------------------------------------- */
+
+/* Design Tokens & Theme Variables */
+:root {
+    --bg-dark: #0b0f19;
+    --bg-card: rgba(17, 24, 39, 0.85);
+    --border-color: rgba(255, 255, 255, 0.08);
+    
+    /* Dynamic Palette */
+    --neon-green: #10b981;
+    --neon-green-glow: rgba(16, 185, 129, 0.4);
+    --arcade-purple: #8b5cf6;
+    --arcade-purple-glow: rgba(139, 92, 246, 0.4);
+    --electric-blue: #0ea5e9;
+    --electric-blue-glow: rgba(14, 165, 233, 0.4);
+    --stadium-gold: #f59e0b;
+    --danger-red: #ef4444;
+    
+    /* Typography */
+    --font-primary: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-mono: 'Space Grotesk', monospace;
+}
+
+/* Global Reset & Base Styling */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #05070c;
+    font-family: var(--font-primary);
+    color: #f3f4f6;
+}
+
+/* Base App Wrapper (Flex Layout for Centering) */
+#screen-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+    /* Stadium ambient glow background */
+    background: radial-gradient(circle at center, #141c30 0%, #05070c 100%);
+}
+
+/* Game Container - Force 16:9 Aspect Ratio & Responsive Scaling */
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 56.25vw; /* (9 / 16) * 100 = 56.25 */
+    max-width: 177.78vh; /* (16 / 9) * 100 = 177.78 */
+    max-height: 100vh;
+    aspect-ratio: 16 / 9;
+    margin: auto;
+    
+    /* Aesthetic Styling */
+    box-shadow: 0 25px 70px -10px rgba(0, 0, 0, 0.8),
+                0 0 40px rgba(16, 185, 129, 0.05);
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-dark);
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+/* Fullscreen Canvas Element */
+#game-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background-color: transparent;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+}
+
+/* Orientation Lock Screen Overlay */
+#orientation-overlay {
+    display: none; /* Hidden by default */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+}
+
+.overlay-content {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 40px 30px;
+    border-radius: 20px;
+    max-width: 400px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Rotating Phone Animation */
+.phone-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--neon-green);
+    margin-bottom: 25px;
+    filter: drop-shadow(0 0 12px var(--neon-green-glow));
+    animation: rotatePhone 2.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+}
+
+.overlay-content h2 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 12px;
+    letter-spacing: -0.025em;
+    color: #ffffff;
+    background: linear-gradient(135deg, #ffffff 30%, #a1a1aa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.overlay-content p {
+    font-size: 1rem;
+    color: #94a3b8;
+    line-height: 1.5;
+}
+
+.overlay-content strong {
+    color: var(--neon-green);
+}
+
+/* Keyframes for Rotating Phone */
+@keyframes rotatePhone {
+    0%, 15% {
+        transform: rotate(0deg);
+    }
+    45%, 70% {
+        transform: rotate(-90deg);
+    }
+    90%, 100% {
+        transform: rotate(0deg);
+    }
+}
+
+/* Aspect Ratio / Orientation Trigger */
+/* If layout has aspect-ratio narrower than 1:1 (portrait screens, tall windows) */
+@media (max-aspect-ratio: 1/1) {
+    #game-container {
+        display: none;
+    }
+    #orientation-overlay {
+        display: flex;
+    }
+}
