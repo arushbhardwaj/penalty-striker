@@ -402,6 +402,9 @@ class SceneManager {
         this.game = game;
         this.scenes = new Map();
         this.currentScene = null;
+        this.transitionAlpha = 0;
+        this.transitionState = null;
+        this.pendingSwitch = null;
     }
 
     add(name, sceneInstance) {
@@ -414,22 +417,43 @@ class SceneManager {
             console.error(`[SceneManager] Scene "${name}" not found!`);
             return;
         }
-        if (this.currentScene) {
-            this.currentScene.exit();
-        }
-        this.currentScene = nextScene;
-        this.currentScene.enter(data);
+        if (this.transitionState) return;
+
+        this.pendingSwitch = { name, data };
+        this.transitionState = 'fadeOut';
+        this.transitionAlpha = 0;
     }
 
     update(dt) {
-        if (this.currentScene) {
-            this.currentScene.update(dt);
+        if (this.transitionState === 'fadeOut') {
+            this.transitionAlpha += dt * 4;
+            if (this.transitionAlpha >= 1) {
+                this.transitionAlpha = 1;
+                if (this.currentScene) this.currentScene.exit();
+                this.currentScene = this.scenes.get(this.pendingSwitch.name);
+                this.currentScene.enter(this.pendingSwitch.data);
+                this.transitionState = 'fadeIn';
+            }
+        } else if (this.transitionState === 'fadeIn') {
+            this.transitionAlpha -= dt * 4;
+            if (this.transitionAlpha <= 0) {
+                this.transitionAlpha = 0;
+                this.transitionState = null;
+                this.pendingSwitch = null;
+            }
+            if (this.currentScene) this.currentScene.update(dt);
+        } else {
+            if (this.currentScene) this.currentScene.update(dt);
         }
     }
 
     render(ctx) {
         if (this.currentScene) {
             this.currentScene.render(ctx);
+        }
+        if (this.transitionState && this.transitionAlpha > 0) {
+            ctx.fillStyle = `rgba(0, 0, 0, ${this.transitionAlpha})`;
+            ctx.fillRect(0, 0, 1920, 1080);
         }
     }
 }
@@ -598,195 +622,319 @@ class MainMenuScene extends Scene {
     constructor(game) {
         super(game);
 
-        // Define interactive button bounding layouts (centered coordinates)
-        this.playBtn = { x: 960, y: 640, w: 380, h: 80, label: "PLAY MATCH", hovered: false };
-        this.statsBtn = { x: 960, y: 760, w: 380, h: 80, label: "STATISTICS", hovered: false };
-        this.muteBtn = { x: 1840, y: 80, w: 60, h: 60, hovered: false };
+        this.buttons = [
+            { x: 960, y: 600, w: 380, h: 80, label: "PLAY", key: 'play', color: '#10b981', hoverColor: '#059669' },
+            { x: 960, y: 710, w: 380, h: 80, label: "SETTINGS", key: 'settings', color: '#0ea5e9', hoverColor: '#0284c7' },
+            { x: 960, y: 820, w: 380, h: 80, label: "HOW TO PLAY", key: 'howtoplay', color: '#8b5cf6', hoverColor: '#6d28d9' },
+        ];
 
-        this.stars = [];
-        this.generateStadiumBackgroundParticles();
-    }
-
-    generateStadiumBackgroundParticles() {
-        for (let i = 0; i < 40; i++) {
-            this.stars.push({
+        this.footballs = [];
+        for (let i = 0; i < 6; i++) {
+            this.footballs.push({
                 x: Math.random() * 1920,
-                y: Math.random() * 450,
-                size: Math.random() * 2 + 1,
-                alpha: Math.random() * 0.5 + 0.3,
-                flashSpeed: Math.random() * 2 + 1
+                y: Math.random() * 1080,
+                r: Math.random() * 35 + 15,
+                speedX: (Math.random() - 0.5) * 0.4,
+                speedY: (Math.random() - 0.5) * 0.3,
+                rotation: Math.random() * Math.PI * 2,
+                rotSpeed: (Math.random() - 0.5) * 0.015,
+                alpha: Math.random() * 0.12 + 0.04,
+                floatAmp: Math.random() * 20 + 10,
+                floatSpeed: Math.random() * 1.5 + 0.5,
+                floatPhase: Math.random() * Math.PI * 2,
             });
         }
+
+        this.stars = [];
+        for (let i = 0; i < 50; i++) {
+            this.stars.push({
+                x: Math.random() * 1920,
+                y: Math.random() * 350,
+                size: Math.random() * 2 + 1,
+                baseAlpha: Math.random() * 0.5 + 0.2,
+                twinkleSpeed: Math.random() * 2 + 1,
+                twinklePhase: Math.random() * Math.PI * 2,
+            });
+        }
+
+        this.entranceTimer = 0;
+        this.entranceDuration = 1.0;
     }
 
     enter() {
-        this.highScore = LocalStorageUtil.load('penalty_highscore', 0);
-        this.matchesPlayed = LocalStorageUtil.load('penalty_matches', 0);
+        this.entranceTimer = 0;
     }
 
     update(dt) {
+        if (this.entranceTimer < this.entranceDuration) {
+            this.entranceTimer = Math.min(this.entranceTimer + dt, this.entranceDuration);
+        }
+
+        const time = performance.now();
         const p = this.game.inputManager.pointer;
 
-        // Update background flash elements
-        this.stars.forEach(star => {
-            star.alpha += Math.sin(performance.now() * 0.002 * star.flashSpeed) * 0.01;
-            star.alpha = Math.max(0.2, Math.min(0.9, star.alpha));
+        this.footballs.forEach(b => {
+            b.x += b.speedX;
+            b.y += b.speedY + Math.sin(time * 0.001 * b.floatSpeed + b.floatPhase) * 0.3;
+            b.rotation += b.rotSpeed;
+            if (b.x < -b.r * 2) b.x = 1920 + b.r;
+            if (b.x > 1920 + b.r * 2) b.x = -b.r;
+            if (b.y < -b.r * 2) b.y = 1080 + b.r;
+            if (b.y > 1080 + b.r * 2) b.y = -b.r;
         });
 
-        // Resolve play button hovering
-        const isOverPlay = Math.abs(p.x - this.playBtn.x) < this.playBtn.w / 2 &&
-            Math.abs(p.y - this.playBtn.y) < this.playBtn.h / 2;
-        this.playBtn.hovered = isOverPlay;
+        this.stars.forEach(s => {
+            const twinkle = Math.sin(time * 0.002 * s.twinkleSpeed + s.twinklePhase);
+            s.alpha = s.baseAlpha + twinkle * 0.15;
+            s.alpha = Math.max(0.1, Math.min(0.9, s.alpha));
+        });
 
-        // Resolve stats button hovering
-        const isOverStats = Math.abs(p.x - this.statsBtn.x) < this.statsBtn.w / 2 &&
-            Math.abs(p.y - this.statsBtn.y) < this.statsBtn.h / 2;
-        this.statsBtn.hovered = isOverStats;
+        this.buttons.forEach(btn => {
+            const isOver = Math.abs(p.x - btn.x) < btn.w / 2 &&
+                Math.abs(p.y - btn.y) < btn.h / 2;
+            btn.hovered = isOver;
+        });
 
-        // Resolve mute button hovering
-        const isOverMute = Math.abs(p.x - this.muteBtn.x) < this.muteBtn.w / 2 &&
-            Math.abs(p.y - this.muteBtn.y) < this.muteBtn.h / 2;
-        this.muteBtn.hovered = isOverMute;
-
-        // Handle Pointer Clicks
         if (p.isTapped) {
-            if (isOverPlay) {
-                this.game.soundManager.playSound('click');
-                this.game.sceneManager.switchTo('Gameplay');
-            } else if (isOverStats) {
-                this.game.soundManager.playSound('click');
-                alert(`STADIUM RECORDS\n-------------------\nMatches Played: ${this.matchesPlayed}\nPersonal Best Score: ${this.highScore} pts`);
-            } else if (isOverMute) {
-                this.game.soundManager.toggleMute();
-                this.game.soundManager.playSound('click');
+            for (const btn of this.buttons) {
+                const isOver = Math.abs(p.x - btn.x) < btn.w / 2 &&
+                    Math.abs(p.y - btn.y) < btn.h / 2;
+                if (isOver) {
+                    this.game.soundManager.playSound('click');
+                    switch (btn.key) {
+                        case 'play': this.game.sceneManager.switchTo('Gameplay'); break;
+                        case 'settings': this.game.sceneManager.switchTo('Settings'); break;
+                        case 'howtoplay': this.game.sceneManager.switchTo('HowToPlay'); break;
+                    }
+                    break;
+                }
             }
         }
     }
 
     render(ctx) {
-        // Base dark sky
         ctx.fillStyle = '#060814';
         ctx.fillRect(0, 0, 1920, 1080);
 
-        // Render ambient stars / spectator flashlights in background
+        this.renderStars(ctx);
+        this.renderFloodlights(ctx);
+        this.renderPitch(ctx);
+        this.renderFootballParticles(ctx);
+        this.renderTitle(ctx);
+        this.renderButtons(ctx);
+        this.renderFooter(ctx);
+    }
+
+    renderStars(ctx) {
         ctx.save();
-        this.stars.forEach(star => {
-            ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
+        this.stars.forEach(s => {
+            ctx.globalAlpha = s.alpha;
+            ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
             ctx.fill();
         });
         ctx.restore();
-
-        // Draw distant floodlights
-        this.drawStadiumFloodlight(ctx, 220, 100);
-        this.drawStadiumFloodlight(ctx, 1700, 100);
-
-        // Draw soccer field perspective floor
-        ctx.save();
-        const fieldGrad = ctx.createLinearGradient(960, 480, 960, 1080);
-        fieldGrad.addColorStop(0, '#062010');
-        fieldGrad.addColorStop(0.5, '#0d4a22');
-        fieldGrad.addColorStop(1, '#083216');
-        ctx.fillStyle = fieldGrad;
-
-        ctx.beginPath();
-        ctx.moveTo(350, 480);
-        ctx.lineTo(1570, 480);
-        ctx.lineTo(1920, 1080);
-        ctx.lineTo(0, 1080);
-        ctx.closePath();
-        ctx.fill();
-
-        // Draw turf light/dark lawn strips radiating outwards
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.025)';
-        for (let i = 0; i < 10; i++) {
-            if (i % 2 === 0) {
-                ctx.beginPath();
-                ctx.moveTo(350 + i * 122, 480);
-                ctx.lineTo(350 + (i + 1) * 122, 480);
-                ctx.lineTo(i * 192 + 192, 1080);
-                ctx.lineTo(i * 192, 1080);
-                ctx.closePath();
-                ctx.fill();
-            }
-        }
-        ctx.restore();
-
-        // Outer white bounds lines (perspective)
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(350, 480);
-        ctx.lineTo(0, 1080);
-        ctx.moveTo(1570, 480);
-        ctx.lineTo(1920, 1080);
-        ctx.stroke();
-
-        // Floating Title Graphics
-        drawGlowingText(ctx, "PENALTY", 960, 240, "900 120px Outfit, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif", "#ffffff", "rgba(255, 255, 255, 0.1)", 15);
-        drawGlowingText(ctx, "STRIKER", 960, 355, "900 120px Outfit, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif", "#10b981", "rgba(16, 185, 129, 0.4)", 30);
-
-        drawGlowingText(ctx, "🏆 PB HIGH SCORE: " + this.highScore, 960, 465, "bold 20px Space Grotesk, monospace", "#f59e0b", "rgba(245, 158, 11, 0.2)", 10);
-
-        // Render Buttons
-        this.renderButton(ctx, this.playBtn, '#10b981', '#059669');
-        this.renderButton(ctx, this.statsBtn, '#8b5cf6', '#6d28d9');
-        this.renderMuteButton(ctx, this.muteBtn);
-
-        // Footer instructions
-        ctx.font = '500 14px Space Grotesk, monospace';
-        ctx.fillStyle = '#64748b';
-        ctx.textAlign = 'center';
-        ctx.fillText("DEVELOPED WITH HTML5 CANVAS & ES6 CLASSES", 960, 1020);
     }
 
-    drawStadiumFloodlight(ctx, x, y) {
+    renderFloodlights(ctx) {
+        this.drawFloodlight(ctx, 200, 100);
+        this.drawFloodlight(ctx, 1720, 100);
+    }
+
+    drawFloodlight(ctx, x, y) {
         ctx.save();
-        // Beams extending down
-        const beam = ctx.createRadialGradient(x, y, 10, x, y + 250, 300);
-        beam.addColorStop(0, 'rgba(14, 165, 233, 0.2)');
+        const beam = ctx.createRadialGradient(x, y, 10, x, y + 250, 400);
+        beam.addColorStop(0, 'rgba(14, 165, 233, 0.12)');
         beam.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = beam;
         ctx.beginPath();
-        ctx.moveTo(x - 30, y);
-        ctx.lineTo(x + 30, y);
-        ctx.lineTo(x + 250, y + 500);
-        ctx.lineTo(x - 250, y + 500);
+        ctx.moveTo(x - 40, y);
+        ctx.lineTo(x + 40, y);
+        ctx.lineTo(x + 300, y + 500);
+        ctx.lineTo(x - 300, y + 500);
         ctx.closePath();
         ctx.fill();
 
-        // Light array casing (4 square lamps)
+        const pulse = Math.sin(performance.now() * 0.002) * 0.2 + 0.8;
         ctx.fillStyle = '#1e293b';
         ctx.strokeStyle = '#475569';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.rect(x - 40, y - 20, 80, 40);
+        ctx.rect(x - 45, y - 25, 90, 45);
         ctx.fill();
         ctx.stroke();
 
-        // Neon dots
         ctx.shadowColor = '#0ea5e9';
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 20 * pulse;
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.arc(x - 20, y, 8, 0, Math.PI * 2);
-        ctx.arc(x, y, 8, 0, Math.PI * 2);
         ctx.arc(x + 20, y, 8, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
     }
 
-    renderButton(ctx, btn, color, hoverColor) {
+    renderPitch(ctx) {
         ctx.save();
+        const fieldGrad = ctx.createLinearGradient(960, 450, 960, 1080);
+        fieldGrad.addColorStop(0, '#062010');
+        fieldGrad.addColorStop(0.4, '#0d4a22');
+        fieldGrad.addColorStop(1, '#083216');
+        ctx.fillStyle = fieldGrad;
+        ctx.beginPath();
+        ctx.moveTo(300, 450);
+        ctx.lineTo(1620, 450);
+        ctx.lineTo(1920, 1080);
+        ctx.lineTo(0, 1080);
+        ctx.closePath();
+        ctx.fill();
 
-        ctx.shadowColor = btn.hovered ? color : 'rgba(0,0,0,0.4)';
-        ctx.shadowBlur = btn.hovered ? 25 : 12;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
+        for (let i = 0; i < 12; i++) {
+            if (i % 2 === 0) {
+                ctx.beginPath();
+                ctx.moveTo(300 + i * 110, 450);
+                ctx.lineTo(300 + (i + 1) * 110, 450);
+                ctx.lineTo(i * 160 + 160, 1080);
+                ctx.lineTo(i * 160, 1080);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(300, 450);
+        ctx.lineTo(0, 1080);
+        ctx.moveTo(1620, 450);
+        ctx.lineTo(1920, 1080);
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(550, 450);
+        ctx.lineTo(400, 550);
+        ctx.lineTo(1520, 550);
+        ctx.lineTo(1370, 450);
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(300, 450);
+        ctx.lineTo(1620, 450);
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    renderFootballParticles(ctx) {
+        this.footballs.forEach(b => {
+            ctx.save();
+            ctx.globalAlpha = b.alpha;
+            ctx.translate(b.x, b.y);
+            ctx.rotate(b.rotation);
+
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.1)';
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(0, 0, b.r, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            const pentR = b.r * 0.38;
+            ctx.beginPath();
+            for (let i = 0; i < 5; i++) {
+                const angle = (i * 2 * Math.PI / 5) - Math.PI / 2;
+                const px = Math.cos(angle) * pentR;
+                const py = Math.sin(angle) * pentR;
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 5; i++) {
+                const angle = (i * 2 * Math.PI / 5) - Math.PI / 2;
+                const px = Math.cos(angle) * pentR;
+                const py = Math.sin(angle) * pentR;
+                const ex = Math.cos(angle) * b.r;
+                const ey = Math.sin(angle) * b.r;
+                ctx.beginPath();
+                ctx.moveTo(px, py);
+                ctx.lineTo(ex, ey);
+                ctx.stroke();
+            }
+            ctx.restore();
+        });
+    }
+
+    renderTitle(ctx) {
+        const progress = Math.min(1, this.entranceTimer / this.entranceDuration);
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        ctx.save();
+        ctx.globalAlpha = easeOut;
+
+        ctx.shadowColor = 'rgba(16, 185, 129, 0.2)';
+        ctx.shadowBlur = 60;
+        ctx.font = '900 100px Outfit, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText("PENALTY", 960, 260);
+
+        ctx.shadowColor = 'rgba(16, 185, 129, 0.5)';
+        ctx.shadowBlur = 80;
+        ctx.fillStyle = '#10b981';
+        ctx.fillText("STRIKER", 960, 365);
+
+        ctx.shadowBlur = 0;
+        ctx.font = '500 16px Space Grotesk, monospace';
+        ctx.fillStyle = 'rgba(148, 163, 184, 0.8)';
+        ctx.fillText("CAN YOU SCORE THE WINNING PENALTY?", 960, 430);
+
+        ctx.restore();
+    }
+
+    renderButtons(ctx) {
+        const progress = Math.min(1, this.entranceTimer / this.entranceDuration);
+        this.buttons.forEach((btn, i) => {
+            const btnDelay = 0.3 + i * 0.15;
+            const btnProgress = Math.max(0, Math.min(1, (progress - btnDelay) / 0.3));
+            const btnEase = 1 - Math.pow(1 - btnProgress, 3);
+            this.drawButton(ctx, btn, btnEase);
+        });
+    }
+
+    drawButton(ctx, btn, ease) {
+        if (ease <= 0) return;
+        ctx.save();
+        ctx.globalAlpha = ease;
+
+        const hoverScale = btn.hovered ? 1.06 : 1;
+        ctx.translate(btn.x, btn.y);
+        ctx.scale(hoverScale, hoverScale);
+        ctx.translate(-btn.x, -btn.y);
+
+        ctx.shadowColor = btn.hovered ? btn.color : 'rgba(0,0,0,0.3)';
+        ctx.shadowBlur = btn.hovered ? 30 : 10;
 
         const grad = ctx.createLinearGradient(btn.x - btn.w / 2, btn.y - btn.h / 2, btn.x - btn.w / 2, btn.y + btn.h / 2);
         if (btn.hovered) {
-            grad.addColorStop(0, color);
-            grad.addColorStop(1, hoverColor);
+            grad.addColorStop(0, btn.color);
+            grad.addColorStop(1, btn.hoverColor);
             ctx.fillStyle = grad;
         } else {
             grad.addColorStop(0, 'rgba(30, 41, 59, 0.8)');
@@ -802,62 +950,23 @@ class MainMenuScene extends Scene {
         ctx.lineWidth = btn.hovered ? 2.5 : 1.5;
         ctx.stroke();
 
-        // Text labels inside buttons
         ctx.shadowBlur = 0;
-        ctx.font = "800 24px Outfit, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif";
+        ctx.font = '800 24px Outfit, sans-serif';
         ctx.fillStyle = btn.hovered ? '#0b0f19' : '#f8fafc';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(btn.label, btn.x, btn.y);
-
         ctx.restore();
     }
 
-    renderMuteButton(ctx, btn) {
+    renderFooter(ctx) {
+        const progress = Math.min(1, this.entranceTimer / this.entranceDuration);
         ctx.save();
-        ctx.fillStyle = btn.hovered ? 'rgba(255,255,255,0.1)' : 'rgba(15, 23, 42, 0.6)';
-        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        drawRoundRect(ctx, btn.x - btn.w / 2, btn.y - btn.h / 2, btn.w, btn.h, 12);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2.5;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-
-        const isMuted = this.game.soundManager.isMuted;
-
-        // Draw speaker icon
-        ctx.beginPath();
-        ctx.moveTo(btn.x - 12, btn.y - 6);
-        ctx.lineTo(btn.x - 6, btn.y - 6);
-        ctx.lineTo(btn.x + 2, btn.y - 14);
-        ctx.lineTo(btn.x + 2, btn.y + 14);
-        ctx.lineTo(btn.x - 6, btn.y + 6);
-        ctx.lineTo(btn.x - 12, btn.y + 6);
-        ctx.closePath();
-        ctx.stroke();
-
-        if (isMuted) {
-            // Draw cross
-            ctx.beginPath();
-            ctx.moveTo(btn.x + 8, btn.y - 5);
-            ctx.lineTo(btn.x + 16, btn.y + 5);
-            ctx.moveTo(btn.x + 16, btn.y - 5);
-            ctx.lineTo(btn.x + 8, btn.y + 5);
-            ctx.stroke();
-        } else {
-            // Draw sound waves
-            ctx.beginPath();
-            ctx.arc(btn.x, btn.y, 8, -Math.PI / 3, Math.PI / 3);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.arc(btn.x, btn.y, 14, -Math.PI / 3, Math.PI / 3);
-            ctx.stroke();
-        }
+        ctx.globalAlpha = progress * 0.5;
+        ctx.font = '500 12px Space Grotesk, monospace';
+        ctx.fillStyle = '#64748b';
+        ctx.textAlign = 'center';
+        ctx.fillText("HTML5 CANVAS GAME", 960, 1040);
         ctx.restore();
     }
 }
@@ -1405,6 +1514,156 @@ class GameOverScene extends Scene {
     }
 }
 
+/**
+ * SettingsScene - Placeholder for settings/preferences screen.
+ */
+class SettingsScene extends Scene {
+    constructor(game) {
+        super(game);
+        this.backBtn = { x: 960, y: 880, w: 320, h: 64, label: "BACK", hovered: false };
+    }
+
+    enter() {}
+
+    update(dt) {
+        const p = this.game.inputManager.pointer;
+        const isOverBack = Math.abs(p.x - this.backBtn.x) < this.backBtn.w / 2 &&
+            Math.abs(p.y - this.backBtn.y) < this.backBtn.h / 2;
+        this.backBtn.hovered = isOverBack;
+
+        if (p.isTapped && isOverBack) {
+            this.game.soundManager.playSound('click');
+            this.game.sceneManager.switchTo('MainMenu');
+        }
+        if (this.game.inputManager.isKeyJustPressed('Escape')) {
+            this.game.sceneManager.switchTo('MainMenu');
+        }
+    }
+
+    render(ctx) {
+        ctx.fillStyle = '#060814';
+        ctx.fillRect(0, 0, 1920, 1080);
+
+        ctx.save();
+        ctx.shadowColor = 'rgba(14, 165, 233, 0.3)';
+        ctx.shadowBlur = 30;
+        ctx.font = '900 64px Outfit, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText("SETTINGS", 960, 300);
+        ctx.shadowBlur = 0;
+
+        ctx.font = '500 22px Space Grotesk, monospace';
+        ctx.fillStyle = '#64748b';
+        ctx.fillText("SOUND SETTINGS & PREFERENCES", 960, 400);
+        ctx.fillStyle = '#475569';
+        ctx.fillText("COMING SOON", 960, 460);
+        ctx.restore();
+
+        this.renderButton(ctx, this.backBtn, '#0ea5e9');
+    }
+
+    renderButton(ctx, btn, color) {
+        ctx.save();
+        ctx.shadowColor = btn.hovered ? color : 'rgba(0,0,0,0.2)';
+        ctx.shadowBlur = btn.hovered ? 20 : 5;
+        ctx.fillStyle = btn.hovered ? color : 'rgba(30, 41, 59, 0.6)';
+        ctx.strokeStyle = btn.hovered ? '#ffffff' : 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = btn.hovered ? 2 : 1;
+        ctx.beginPath();
+        drawRoundRect(ctx, btn.x - btn.w / 2, btn.y - btn.h / 2, btn.w, btn.h, 12);
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.font = 'bold 22px Outfit, sans-serif';
+        ctx.fillStyle = btn.hovered ? '#0b0f19' : '#e2e8f0';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(btn.label, btn.x, btn.y);
+        ctx.restore();
+    }
+}
+
+/**
+ * HowToPlayScene - Shows game instructions and controls.
+ */
+class HowToPlayScene extends Scene {
+    constructor(game) {
+        super(game);
+        this.backBtn = { x: 960, y: 880, w: 320, h: 64, label: "BACK", hovered: false };
+    }
+
+    enter() {}
+
+    update(dt) {
+        const p = this.game.inputManager.pointer;
+        const isOverBack = Math.abs(p.x - this.backBtn.x) < this.backBtn.w / 2 &&
+            Math.abs(p.y - this.backBtn.y) < this.backBtn.h / 2;
+        this.backBtn.hovered = isOverBack;
+
+        if (p.isTapped && isOverBack) {
+            this.game.soundManager.playSound('click');
+            this.game.sceneManager.switchTo('MainMenu');
+        }
+        if (this.game.inputManager.isKeyJustPressed('Escape')) {
+            this.game.sceneManager.switchTo('MainMenu');
+        }
+    }
+
+    render(ctx) {
+        ctx.fillStyle = '#060814';
+        ctx.fillRect(0, 0, 1920, 1080);
+
+        ctx.save();
+        ctx.shadowColor = 'rgba(139, 92, 246, 0.3)';
+        ctx.shadowBlur = 30;
+        ctx.font = '900 64px Outfit, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText("HOW TO PLAY", 960, 250);
+        ctx.shadowBlur = 0;
+
+        ctx.font = '500 22px Space Grotesk, monospace';
+        ctx.fillStyle = '#94a3b8';
+        ctx.textAlign = 'left';
+        const instructions = [
+            "1. SWIPE UP on the ball to shoot",
+            "2. AIM by swiping left or right",
+            "3. SCORE 5 penalties to win the match",
+            "4. BUILD streaks for multiplier bonus",
+            "5. BEAT your high score to set records",
+        ];
+        instructions.forEach((text, i) => {
+            ctx.fillText(text, 540, 400 + i * 60);
+        });
+        ctx.restore();
+
+        this.renderButton(ctx, this.backBtn, '#8b5cf6');
+    }
+
+    renderButton(ctx, btn, color) {
+        ctx.save();
+        ctx.shadowColor = btn.hovered ? color : 'rgba(0,0,0,0.2)';
+        ctx.shadowBlur = btn.hovered ? 20 : 5;
+        ctx.fillStyle = btn.hovered ? color : 'rgba(30, 41, 59, 0.6)';
+        ctx.strokeStyle = btn.hovered ? '#ffffff' : 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = btn.hovered ? 2 : 1;
+        ctx.beginPath();
+        drawRoundRect(ctx, btn.x - btn.w / 2, btn.y - btn.h / 2, btn.w, btn.h, 12);
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.font = 'bold 22px Outfit, sans-serif';
+        ctx.fillStyle = btn.hovered ? '#0b0f19' : '#e2e8f0';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(btn.label, btn.x, btn.y);
+        ctx.restore();
+    }
+}
+
 /* =============================================================
  * Core Engine Class - Orchestrator
  * ============================================================= */
@@ -1445,6 +1704,8 @@ class Game {
         // Create and register game Scenes
         this.sceneManager.add('Loading', new LoadingScene(this));
         this.sceneManager.add('MainMenu', new MainMenuScene(this));
+        this.sceneManager.add('Settings', new SettingsScene(this));
+        this.sceneManager.add('HowToPlay', new HowToPlayScene(this));
         this.sceneManager.add('Gameplay', new GameplayScene(this));
         this.sceneManager.add('Pause', new PauseScene(this));
         this.sceneManager.add('GameOver', new GameOverScene(this));
