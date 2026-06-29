@@ -79,6 +79,28 @@ class AssetLoader {
         });
     }
 
+    loadAsync(onProgress) {
+        return new Promise((resolve) => {
+            this.onComplete = () => {
+                this.onProgress = null;
+                this.onComplete = null;
+                resolve({
+                    images: this.images,
+                    audio: this.audio
+                });
+            };
+            if (onProgress) {
+                const userOnProgress = onProgress;
+                const origOnProgress = this.onProgress;
+                this.onProgress = (pct) => {
+                    userOnProgress(pct);
+                    if (origOnProgress) origOnProgress(pct);
+                };
+            }
+            this.start();
+        });
+    }
+
     loadImage(key, src) {
         const img = new Image();
         img.src = src;
@@ -468,20 +490,16 @@ class LoadingScene extends Scene {
         this.progress = 0;
         this.targetProgress = 0;
 
-        // Start asset loader
-        this.game.loader.onProgress = (pct) => {
-            this.targetProgress = pct;
-        };
-
-        this.game.loader.onComplete = () => {
-            this.targetProgress = 100;
-        };
-
         // Enqueue high quality inline SVG placeholders to verify asset loading
         this.game.loader.queueImage('ball', 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2246%22%20fill%3D%22%2523ffffff%22%20stroke%3D%22%25230f172a%22%20stroke-width%3D%224%22%2F%3E%3Cpath%20d%3D%22M50%2032%20L61%2040%20L57%2052%20L43%2052%20L39%2040%20Z%22%20fill%3D%22%25231e293b%22%20stroke%3D%22%25230f172a%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M50%202%20L50%2032%20M92%2026%20L61%2040%20M76%2080%20L57%2052%20M24%2080%20L43%2052%20M8%2026%20L39%2040%22%20stroke%3D%22%25230f172a%22%20stroke-width%3D%223%22%2F%3E%3C%2Fsvg%3E');
         this.game.loader.queueImage('glove', 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20x%3D%2225%22%20y%3D%2235%22%20width%3D%2250%22%20height%3D%2245%22%20rx%3D%2212%22%20fill%3D%22%25230ea5e9%22%20stroke%3D%22%2523ffffff%22%20stroke-width%3D%223%22%2F%3E%3Cpath%20d%3D%22M30%2035%20V15%20M42%2035%20V10%20M54%2035%20V10%20M66%2035%20V15%20M75%2045%20L88%2030%22%20stroke%3D%22%2523ffffff%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E');
 
-        this.game.loader.start();
+        // Start asset loader with Promise-based async loading
+        this.game.loader.loadAsync((pct) => {
+            this.targetProgress = pct;
+        }).then(() => {
+            this.targetProgress = 100;
+        });
     }
 
     update(dt) {
@@ -534,7 +552,7 @@ class LoadingScene extends Scene {
 
         // Logo Title
         drawGlowingText(ctx, "PENALTY STRIKER", 960, 430, "bold 90px Outfit, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif", "#ffffff", "rgba(16, 185, 129, 0.4)", 25);
-        drawGlowingText(ctx, "PREPARING STADIUM" + this.dots, 960, 510, "500 20px Space Grotesk, monospace", "#10b981", "transparent", 0);
+        drawGlowingText(ctx, "LOADING" + this.dots, 960, 510, "500 20px Space Grotesk, monospace", "#10b981", "transparent", 0);
 
         // Loading Bar Container
         ctx.save();
