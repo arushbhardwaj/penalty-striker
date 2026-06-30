@@ -8,27 +8,25 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>penalty striker</title>
+    <title>Penalty Striker</title>
 
-    <!-- Premium Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Space+Grotesk:wght@400;500;700&display=swap"
         rel="stylesheet">
 
-    <!-- Main Style Sheet -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/ui.css">
+    <link rel="stylesheet" href="css/animations.css">
 </head>
 
 <body>
     <div id="screen-wrapper">
-        <!-- Main Game Container (16:9 Aspect Ratio) -->
         <div id="game-container">
             <canvas id="game-canvas"></canvas>
         </div>
 
-        <!-- Orientation Lock Screen (Shown only in portrait on mobile) -->
         <div id="orientation-overlay">
             <div class="overlay-content">
                 <div class="phone-icon">
@@ -39,13 +37,12 @@
                     </svg>
                 </div>
                 <h2>Rotate Your Device</h2>
-                <p>Please turn your device to landscape mode to play <strong>penalty striker</strong>.</p>
+                <p>Please turn your device to landscape mode to play <strong>Penalty Striker</strong>.</p>
             </div>
         </div>
     </div>
 
-    <!-- Game Logic Script -->
-    <script src="script.js"></script>
+    <script type="module" src="js/main.js"></script>
 </body>
 
 </html>

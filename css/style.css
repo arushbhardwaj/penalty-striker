@@ -1,0 +1,65 @@
+:root {
+    --bg-dark: #0b0f19;
+    --bg-card: rgba(17, 24, 39, 0.85);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --neon-green: #10b981;
+    --neon-green-glow: rgba(16, 185, 129, 0.4);
+    --arcade-purple: #8b5cf6;
+    --electric-blue: #0ea5e9;
+    --stadium-gold: #f59e0b;
+    --danger-red: #ef4444;
+    --font-primary: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-mono: 'Space Grotesk', monospace;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #05070c;
+    font-family: var(--font-primary);
+    color: #f3f4f6;
+}
+
+#screen-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+    background: radial-gradient(circle at center, #141c30 0%, #05070c 100%);
+}
+
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 56.25vw;
+    max-width: 177.78vh;
+    max-height: 100vh;
+    aspect-ratio: 16 / 9;
+    margin: auto;
+    box-shadow: 0 25px 70px -10px rgba(0, 0, 0, 0.8),
+                0 0 40px rgba(16, 185, 129, 0.05);
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-dark);
+    overflow: hidden;
+}
+
+#game-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background-color: transparent;
+}
