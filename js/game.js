@@ -6,6 +6,8 @@ import { drawRoundRect } from './utils/helpers.js';
 import { Ball } from './gameplay/ball.js';
 import { Goalkeeper } from './gameplay/goalkeeper.js';
 import { calculateShot, checkGoal, checkSave } from './gameplay/physics.js';
+import { KickInput } from './gameplay/KickInput.js';
+import { PowerMeter } from './gameplay/PowerMeter.js';
 import { renderHUD, renderPauseButton, renderSwipeTutorial, createDefaultPauseBtn } from './ui/hud.js';
 
 export class Scene {
@@ -193,6 +195,14 @@ export class GameplayScene extends Scene {
       top: PHYSICS.goalY - PHYSICS.goalHeight,
       bottom: PHYSICS.goalY,
     };
+
+    this.powerMeter = new PowerMeter();
+    this.kickInput = new KickInput(game.canvas);
+    this.trajectoryPoints = [];
+    this._lastPreviewInput = null;
+
+    this.kickInput.onKick = (input) => this._onKick(input);
+    this.kickInput.onPreview = (input) => this._onPreview(input);
   }
 
   enter() {
@@ -204,6 +214,10 @@ export class GameplayScene extends Scene {
     this.shotResult = null;
     this.ball.reset();
     this.goalkeeper.reset();
+    this.powerMeter.reset();
+    this.trajectoryPoints = [];
+    this._lastPreviewInput = null;
+    this.kickInput.enable();
   }
 
   update(dt) {
@@ -211,14 +225,28 @@ export class GameplayScene extends Scene {
 
     this.swipePulse += 3.5 * dt;
 
+    this.powerMeter.update(dt);
+
+    if (this.kickInput.isDown && this._lastPreviewInput) {
+      this.trajectoryPoints = this.kickInput.predictTrajectory({
+        ...this._lastPreviewInput,
+        power: this.powerMeter.getValue(),
+      });
+    }
+
     this.pauseBtn.hovered =
       Math.abs(p.x - this.pauseBtn.x) < this.pauseBtn.w / 2 &&
       Math.abs(p.y - this.pauseBtn.y) < this.pauseBtn.h / 2;
 
-    if (p.isTapped && this.pauseBtn.hovered) {
-      this.game.soundManager.playSound('click');
-      this.game.sceneManager.switchTo('Pause', this);
-      return;
+    if (p.isTapped) {
+      if (this.pauseBtn.hovered) {
+        this.game.soundManager.playSound('click');
+        this.game.sceneManager.switchTo('Pause', this);
+        return;
+      }
+      if (this.powerMeter.containsPoint(p.x, p.y)) {
+        this.powerMeter.lock();
+      }
     }
 
     if (this.game.inputManager.isKeyJustPressed('Escape')) {
@@ -234,49 +262,76 @@ export class GameplayScene extends Scene {
 
       if (!this.ball.isMoving || this.ball.y < 100 || this.shotTimer > 3) {
         this.shotActive = false;
-        return;
       }
       return;
     }
+  }
 
-    if (p.swipe.active) {
-      this.attempts++;
-      const shot = calculateShot(p.swipe);
-      this.ball.shoot(shot.vx, shot.vy);
-      this.goalkeeper.startDive(Math.sign(p.swipe.dx));
-      this.shotActive = true;
-      this.shotTimer = 0;
+  _onPreview(input) {
+    this._lastPreviewInput = input;
+    const effectivePower = this.powerMeter.getValue();
+    this.trajectoryPoints = this.kickInput.predictTrajectory({
+      ...input,
+      power: effectivePower,
+    });
+  }
 
-      const goalX = this.ball.x + shot.vx * 0.3;
-      const goalY = this.ball.y + shot.vy * 0.3;
-      const isGoal = checkGoal(goalX, goalY);
-      const isSaved = checkSave(goalX, goalY, this.goalkeeper.x, this.goalkeeper.y, this.goalkeeper.radius);
+  _onKick(input) {
+    if (this.shotActive) return;
 
-      if (isGoal && !isSaved) {
-        this.score++;
-        this.multiplier = Math.min(PHYSICS.maxMultiplier, this.multiplier + 1);
-        this.shotResult = 'goal';
-        this.game.soundManager.playSound('goal');
-        this.ball.isScored = true;
-      } else {
-        this.multiplier = 1;
-        this.shotResult = 'miss';
-        this.game.soundManager.playSound('miss');
-        if (isSaved) this.ball.isSaved = true;
-      }
+    this.kickInput.disable();
+    this.attempts++;
 
-      if (this.attempts >= PHYSICS.maxAttempts) {
-        setTimeout(() => this.endMatch(), 800);
-        return;
-      }
-
-      setTimeout(() => {
-        this.ball.reset();
-        this.goalkeeper.reset();
-        this.shotResult = null;
-        this.shotActive = false;
-      }, 1500);
+    if (!this.powerMeter.locked) {
+      this.powerMeter.lock();
     }
+
+    const shotInput = {
+      aimAngleX: input.aimAngleX,
+      power: this.powerMeter.getValue(),
+      curveInput: input.curveInput,
+    };
+
+    const shot = calculateShot(shotInput);
+    this.ball.shoot(shot.vx, shot.vy);
+    this.goalkeeper.startDive(Math.sign(input.aimAngleX));
+    this.shotActive = true;
+    this.shotTimer = 0;
+    this.trajectoryPoints = [];
+
+    const goalX = this.ball.x + shot.vx * 0.3;
+    const goalY = this.ball.y + shot.vy * 0.3;
+    const isGoal = checkGoal(goalX, goalY);
+    const isSaved = checkSave(goalX, goalY, this.goalkeeper.x, this.goalkeeper.y, this.goalkeeper.radius);
+
+    if (isGoal && !isSaved) {
+      this.score++;
+      this.multiplier = Math.min(PHYSICS.maxMultiplier, this.multiplier + 1);
+      this.shotResult = 'goal';
+      this.game.soundManager.playSound('goal');
+      this.ball.isScored = true;
+    } else {
+      this.multiplier = 1;
+      this.shotResult = 'miss';
+      this.game.soundManager.playSound('miss');
+      if (isSaved) this.ball.isSaved = true;
+    }
+
+    if (this.attempts >= PHYSICS.maxAttempts) {
+      setTimeout(() => this.endMatch(), 800);
+      return;
+    }
+
+    setTimeout(() => {
+      this.ball.reset();
+      this.goalkeeper.reset();
+      this.shotResult = null;
+      this.shotActive = false;
+      this.powerMeter.reset();
+      this.trajectoryPoints = [];
+      this._lastPreviewInput = null;
+      this.kickInput.enable();
+    }, 1500);
   }
 
   endMatch() {
@@ -309,11 +364,42 @@ export class GameplayScene extends Scene {
     this.ball.render(ctx, this.game.loader.getImage('ball'));
     this.goalkeeper.render(ctx, this.game.loader.getImage('glove'));
 
+    if (this.trajectoryPoints.length > 0) {
+      this._renderTrajectoryPreview(ctx);
+    }
+
+    this.powerMeter.render(ctx);
+
     if (this.attempts === 0 && !this.shotActive) {
       renderSwipeTutorial(ctx, this.swipePulse);
     }
 
     renderPauseButton(ctx, this.pauseBtn);
+  }
+
+  _renderTrajectoryPreview(ctx) {
+    const pts = this.trajectoryPoints;
+    if (pts.length < 2) return;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) {
+      ctx.lineTo(pts[i].x, pts[i].y);
+    }
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+    pts.forEach((pt) => {
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    ctx.restore();
   }
 
   renderStadiumField(ctx) {

@@ -1,13 +1,15 @@
 import { PHYSICS, CANVAS_WIDTH } from '../config.js';
 
-export function calculateShot(swipe) {
-  const power = Math.min(1, Math.hypot(swipe.vx, swipe.vy) / 3000);
-  const angleX = Math.max(-1, Math.min(1, swipe.dx / 400));
+export function calculateShot(input) {
+  const { aimAngleX, power, curveInput = 0 } = input;
+  const baseSpeed = 1200 * power;
   return {
-    vx: angleX * 600 * power,
-    vy: -1200 * power,
-    rotation: -angleX * power * 10,
+    vx: aimAngleX * baseSpeed * 0.5 + curveInput * baseSpeed * 0.15,
+    vy: -baseSpeed,
+    rotation: -aimAngleX * power * 10 + curveInput * power * 5,
     power,
+    aimAngleX,
+    curveInput,
   };
 }
 
