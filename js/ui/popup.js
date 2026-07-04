@@ -44,7 +44,15 @@ export class PauseScene extends Scene {
   render(ctx) {
     if (this.previousScene) this.previousScene.render(ctx);
 
-    ctx.fillStyle = 'rgba(180, 205, 225, 0.85)';
+    ctx.save();
+    if (typeof ctx.filter !== 'undefined') {
+      ctx.filter = 'blur(6px)';
+      ctx.drawImage(this.game.canvas, 0, 0);
+      ctx.filter = 'none';
+    }
+    ctx.restore();
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
     ctx.fillRect(0, 0, 1920, 1080);
 
     ctx.save();
