@@ -2,9 +2,9 @@ export const CANVAS_WIDTH = 1920;
 export const CANVAS_HEIGHT = 1080;
 
 export const COLORS = {
-  bg: '#05070c',
-  dark: '#0b0f19',
-  card: 'rgba(17, 24, 39, 0.85)',
+  bg: '#dce8f5',
+  dark: '#b0c8dc',
+  card: 'rgba(200, 215, 235, 0.85)',
   green: '#10b981',
   greenGlow: 'rgba(16, 185, 129, 0.4)',
   purple: '#8b5cf6',
@@ -15,11 +15,11 @@ export const COLORS = {
   red: '#ef4444',
   white: '#ffffff',
   slate: '#94a3b8',
-  darkSlate: '#64748b',
-  border: 'rgba(255, 255, 255, 0.08)',
-  fieldDark: '#062010',
-  fieldMid: '#0d4a22',
-  fieldLight: '#0f4f24',
+  darkSlate: '#4a6a8a',
+  border: 'rgba(60, 80, 110, 0.12)',
+  fieldDark: '#1e6a3a',
+  fieldMid: '#3da55e',
+  fieldLight: '#4bbf6b',
 };
 
 export const PHYSICS = {

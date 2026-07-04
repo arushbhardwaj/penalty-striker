@@ -189,15 +189,16 @@ export class GameplayScene extends Scene {
     this.totalRounds = 0;
     this.showResult = false;
 
-    this.stars = [];
-    for (let i = 0; i < 30; i++) {
-      this.stars.push({
-        x: Math.random() * 1920,
-        y: Math.random() * 200,
-        size: Math.random() * 2 + 0.5,
-        baseAlpha: Math.random() * 0.5 + 0.2,
-        twinkleSpeed: Math.random() * 2 + 0.5,
-        twinklePhase: Math.random() * Math.PI * 2,
+    this.clouds = [];
+    for (let i = 0; i < 10; i++) {
+      this.clouds.push({
+        x: Math.random() * 2200 - 100,
+        y: 30 + Math.random() * 280,
+        w: 120 + Math.random() * 160,
+        h: 28 + Math.random() * 32,
+        speed: 0.03 + Math.random() * 0.08,
+        alpha: 0.55 + Math.random() * 0.35,
+        parts: Math.floor(4 + Math.random() * 3),
       });
     }
 
@@ -578,38 +579,68 @@ export class GameplayScene extends Scene {
 
     ctx.save();
 
-    // Night sky
+    // Bright daytime sky gradient
     const skyGrad = ctx.createLinearGradient(0, 0, 0, horizon - 90);
-    skyGrad.addColorStop(0, '#050a18');
-    skyGrad.addColorStop(0.5, '#0a1030');
-    skyGrad.addColorStop(1, '#121a3a');
+    skyGrad.addColorStop(0, '#6FBFFF');
+    skyGrad.addColorStop(0.4, '#85CEFF');
+    skyGrad.addColorStop(0.7, '#96D9FF');
+    skyGrad.addColorStop(1, '#A8E4FF');
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, 1920, horizon - 90);
 
-    // Stars
-    this.stars.forEach((s) => {
-      const twinkle = Math.sin(time * s.twinkleSpeed + s.twinklePhase);
-      ctx.globalAlpha = s.baseAlpha + twinkle * 0.15;
+    // Sun in upper-left area (45-degree angle sunlight)
+    const sunGrad = ctx.createRadialGradient(180, 80, 10, 180, 80, 350);
+    sunGrad.addColorStop(0, 'rgba(255, 250, 230, 0.35)');
+    sunGrad.addColorStop(0.3, 'rgba(255, 245, 215, 0.12)');
+    sunGrad.addColorStop(1, 'rgba(255, 245, 215, 0)');
+    ctx.fillStyle = sunGrad;
+    ctx.beginPath();
+    ctx.arc(180, 80, 350, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Sun disk
+    ctx.fillStyle = 'rgba(255, 250, 235, 0.5)';
+    ctx.beginPath();
+    ctx.arc(180, 80, 35, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Soft clouds
+    this.clouds.forEach((cloud) => {
+      const cx = ((cloud.x + time * cloud.speed * 25) % 2400 + 2400) % 2400 - 200;
+      ctx.save();
+      ctx.globalAlpha = cloud.alpha;
       ctx.fillStyle = '#ffffff';
+      const n = cloud.parts;
+      for (let j = 0; j < n; j++) {
+        const angle = (j / n) * Math.PI * 2;
+        const dx = Math.cos(angle) * cloud.w * 0.28;
+        const dy = Math.sin(angle) * cloud.h * 0.25 - cloud.h * 0.05;
+        const r = cloud.w * (0.22 + Math.sin(j * 1.5) * 0.08);
+        ctx.beginPath();
+        ctx.arc(cx + dx, cloud.y + dy, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // Cloud shadow/bottom highlight
+      ctx.fillStyle = 'rgba(200, 220, 240, 0.15)';
       ctx.beginPath();
-      ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+      ctx.arc(cx + cloud.w * 0.05, cloud.y + cloud.h * 0.15, cloud.w * 0.35, 0, Math.PI * 2);
       ctx.fill();
+      ctx.restore();
     });
-    ctx.globalAlpha = 1;
 
     // ====== STADIUM STRUCTURE ======
 
-    // Main stand background
+    // Main stand background (daylight concrete colors)
     const standGrad = ctx.createLinearGradient(0, horizon - 90, 0, horizon);
-    standGrad.addColorStop(0, '#1a1a2e');
-    standGrad.addColorStop(0.3, '#16213e');
-    standGrad.addColorStop(0.7, '#1a1a30');
-    standGrad.addColorStop(1, '#0f0f22');
+    standGrad.addColorStop(0, '#B8C8DC');
+    standGrad.addColorStop(0.3, '#C8D6E8');
+    standGrad.addColorStop(0.7, '#C0D0E4');
+    standGrad.addColorStop(1, '#A8B8CC');
     ctx.fillStyle = standGrad;
     ctx.fillRect(0, horizon - 90, 1920, 90);
 
     // Stadium concrete tiers
-    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.strokeStyle = 'rgba(100, 120, 150, 0.15)';
     ctx.lineWidth = 1;
     for (let i = 0; i < 6; i++) {
       const y = horizon - 88 + i * 14;
@@ -620,11 +651,11 @@ export class GameplayScene extends Scene {
     }
 
     // Roof structure
-    ctx.fillStyle = '#0a0a18';
+    ctx.fillStyle = '#8A9BB0';
     ctx.fillRect(0, horizon - 108, 1920, 18);
 
     // Roof trusses
-    ctx.strokeStyle = '#1a1a3a';
+    ctx.strokeStyle = '#7A8BA0';
     ctx.lineWidth = 2;
     for (let x = 0; x < 1920; x += 160) {
       ctx.beginPath();
@@ -634,9 +665,9 @@ export class GameplayScene extends Scene {
     }
 
     // Upper tier (second deck)
-    ctx.fillStyle = 'rgba(20, 20, 40, 0.6)';
+    ctx.fillStyle = 'rgba(160, 180, 200, 0.5)';
     ctx.fillRect(60, horizon - 110, 1800, 12);
-    ctx.strokeStyle = 'rgba(40, 40, 70, 0.4)';
+    ctx.strokeStyle = 'rgba(120, 140, 170, 0.3)';
     ctx.lineWidth = 1;
     ctx.strokeRect(60, horizon - 110, 1800, 12);
 
@@ -696,17 +727,15 @@ export class GameplayScene extends Scene {
       }
     });
 
-    // ====== FLOODLIGHTS ======
+    // ====== FLOODLIGHT POLES (structure only, no glow) ======
 
-    // Left floodlight
     this.drawFloodlightPole(ctx, 120, horizon - 90);
-    // Right floodlight
     this.drawFloodlightPole(ctx, 1800, horizon - 90);
 
-    // Stadium glow (ambient light from pitch reflecting onto stands)
-    const glow = ctx.createRadialGradient(960, horizon, 50, 960, horizon, 500);
-    glow.addColorStop(0, 'rgba(16, 185, 129, 0.04)');
-    glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    // Subtle warm sunlight ambient glow on stands
+    const glow = ctx.createRadialGradient(180, 80, 30, 180, 80, 600);
+    glow.addColorStop(0, 'rgba(255, 240, 200, 0.06)');
+    glow.addColorStop(1, 'rgba(255, 240, 200, 0)');
     ctx.fillStyle = glow;
     ctx.fillRect(0, horizon - 110, 1920, 110);
 
@@ -716,38 +745,16 @@ export class GameplayScene extends Scene {
   drawFloodlightPole(ctx, x, y) {
     ctx.save();
 
-    // Light beam
-    const beam = ctx.createRadialGradient(x, y, 5, x, y + 80, 200);
-    beam.addColorStop(0, 'rgba(255, 255, 200, 0.08)');
-    beam.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = beam;
-    ctx.beginPath();
-    ctx.moveTo(x - 20, y);
-    ctx.lineTo(x + 20, y);
-    ctx.lineTo(x + 150, y + 200);
-    ctx.lineTo(x - 150, y + 200);
-    ctx.closePath();
-    ctx.fill();
-
-    // Pole
-    ctx.fillStyle = '#1a1a2e';
-    ctx.strokeStyle = '#2a2a4a';
+    // Pole (daytime - just structural, no beam or glow)
+    ctx.fillStyle = '#8A9BB0';
+    ctx.strokeStyle = '#7A8BA0';
     ctx.lineWidth = 1;
     ctx.fillRect(x - 3, y, 6, 40);
     ctx.strokeRect(x - 3, y, 6, 40);
 
-    // Light housing
-    ctx.fillStyle = '#2a2a3a';
+    // Light housing (off during daytime)
+    ctx.fillStyle = '#6A7B90';
     ctx.fillRect(x - 12, y - 6, 24, 8);
-
-    const pulse = Math.sin(performance.now() * 0.003) * 0.2 + 0.8;
-    ctx.shadowColor = '#ffffee';
-    ctx.shadowBlur = 15 * pulse;
-    ctx.fillStyle = '#ffffcc';
-    ctx.beginPath();
-    ctx.arc(x - 6, y - 2, 3, 0, Math.PI * 2);
-    ctx.arc(x + 6, y - 2, 3, 0, Math.PI * 2);
-    ctx.fill();
 
     ctx.restore();
   }
@@ -756,24 +763,32 @@ export class GameplayScene extends Scene {
     const horizon = 460;
     ctx.save();
 
-    // Deep rich pitch gradient
+    // Bright daytime pitch gradient - rich green under sunlight
     const fieldGrad = ctx.createLinearGradient(960, horizon, 960, 1080);
-    fieldGrad.addColorStop(0, '#145225');
-    fieldGrad.addColorStop(0.3, '#1e7a3a');
-    fieldGrad.addColorStop(0.7, '#186630');
-    fieldGrad.addColorStop(1, '#0d4518');
+    fieldGrad.addColorStop(0, '#2d8a4e');
+    fieldGrad.addColorStop(0.25, '#3da55e');
+    fieldGrad.addColorStop(0.6, '#32934e');
+    fieldGrad.addColorStop(1, '#1e7338');
     ctx.fillStyle = fieldGrad;
     ctx.fillRect(0, horizon, 1920, 1080 - horizon);
 
     // Subtle stripe pattern
     for (let i = 0; i < 16; i++) {
-      ctx.fillStyle = i % 2 === 0 ? 'rgba(255,255,255,0.025)' : 'rgba(0,0,0,0.025)';
+      ctx.fillStyle = i % 2 === 0 ? 'rgba(255,255,255,0.035)' : 'rgba(0,0,0,0.02)';
       const segH = (1080 - horizon) / 16;
       ctx.fillRect(0, horizon + i * segH, 1920, segH);
     }
 
+    // Sunlight highlight on the field (soft diagonal wash from upper-left)
+    const sunWash = ctx.createLinearGradient(0, horizon, 1920, 1080);
+    sunWash.addColorStop(0, 'rgba(255, 240, 200, 0.04)');
+    sunWash.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
+    sunWash.addColorStop(1, 'rgba(0, 0, 0, 0.02)');
+    ctx.fillStyle = sunWash;
+    ctx.fillRect(0, horizon, 1920, 1080 - horizon);
+
     // Field edge lines (bold)
-    ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
     ctx.lineWidth = 5;
     ctx.beginPath();
     ctx.moveTo(280, horizon);
@@ -783,7 +798,7 @@ export class GameplayScene extends Scene {
     ctx.stroke();
 
     // Center line (bold)
-    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.45)';
     ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.moveTo(960, horizon);
@@ -791,7 +806,7 @@ export class GameplayScene extends Scene {
     ctx.stroke();
 
     // Center circle (bold)
-    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
     ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.arc(960, horizon, 220, 0, Math.PI, true);
@@ -803,7 +818,7 @@ export class GameplayScene extends Scene {
     const penTop = horizon + 50;
     const penBottom = 730;
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.65)';
     ctx.lineWidth = 6;
     ctx.lineCap = 'square';
     ctx.lineJoin = 'square';
@@ -814,46 +829,39 @@ export class GameplayScene extends Scene {
     const sixYardRight = 1080;
     const sixYardTop = horizon + 50;
     const sixYardBottom = 640;
-    ctx.strokeStyle = 'rgba(255,255,255,0.40)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.50)';
     ctx.lineWidth = 5;
     ctx.strokeRect(sixYardLeft, sixYardTop, sixYardRight - sixYardLeft, sixYardBottom - sixYardTop);
 
     // Penalty arc (bold)
     const arcR = 90;
-    ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
     ctx.lineWidth = 5;
     ctx.beginPath();
     ctx.arc(960, penBottom, arcR, 0, Math.PI, true);
     ctx.stroke();
 
     // Goal area arc (top of 6-yard box - small arc)
-    ctx.strokeStyle = 'rgba(255,255,255,0.20)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.30)';
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(960, sixYardBottom, 40, 0, Math.PI, true);
     ctx.stroke();
 
     // Penalty spot (larger, bolder)
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.shadowColor = 'rgba(255,255,255,0.3)';
-    ctx.shadowBlur = 8;
+    ctx.fillStyle = 'rgba(255,255,255,0.90)';
+    ctx.shadowColor = 'rgba(255,255,255,0.2)';
+    ctx.shadowBlur = 4;
     ctx.beginPath();
     ctx.arc(PHYSICS.penaltySpotX, PHYSICS.penaltySpotY, 10, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowBlur = 0;
 
     // Center spot
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
     ctx.beginPath();
     ctx.arc(960, horizon, 6, 0, Math.PI * 2);
     ctx.fill();
-
-    // Pitch glow (subtle floodlight illumination)
-    const glow = ctx.createRadialGradient(960, 500, 50, 960, 500, 600);
-    glow.addColorStop(0, 'rgba(255, 255, 200, 0.05)');
-    glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = glow;
-    ctx.fillRect(0, horizon, 1920, 1080 - horizon);
 
     ctx.restore();
   }
@@ -866,8 +874,8 @@ export class GameplayScene extends Scene {
 
     ctx.save();
 
-    // Net mesh (more visible)
-    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    // Net mesh (more visible in daylight)
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
     ctx.lineWidth = 1.2;
     for (let col = gx - gw / 2; col <= gx + gw / 2; col += 16) {
       ctx.beginPath();
@@ -884,12 +892,13 @@ export class GameplayScene extends Scene {
     }
 
     // Netting subtle fill
-    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
     ctx.fillRect(gx - gw / 2, gy - gh, gw, gh);
 
-    // Goal posts (very bold white)
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = 'rgba(255,255,255,0.2)';
+    // Goal posts (bright white with subtle shadow for depth)
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = 'rgba(0,0,0,0.08)';
+    ctx.shadowOffsetY = 3;
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 12;
     ctx.lineCap = 'square';
@@ -903,7 +912,8 @@ export class GameplayScene extends Scene {
 
     // Outer post outline (depth)
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.shadowOffsetY = 0;
+    ctx.strokeStyle = 'rgba(0,0,0,0.05)';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(gx - gw / 2 - 20, gy);
@@ -922,18 +932,18 @@ export class GameplayScene extends Scene {
 
     ctx.save();
 
-    const shadowGrad = ctx.createRadialGradient(bx, by + r * 0.6, 2, bx, by + r * 0.6, r * 0.7);
-    shadowGrad.addColorStop(0, 'rgba(0,0,0,0.5)');
+    const shadowGrad = ctx.createRadialGradient(bx + r * 0.2, by + r * 0.7, 2, bx + r * 0.2, by + r * 0.7, r * 0.75);
+    shadowGrad.addColorStop(0, 'rgba(0,0,0,0.35)');
     shadowGrad.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = shadowGrad;
     ctx.beginPath();
-    ctx.ellipse(bx, by + r * 0.6, r * 0.7, r * 0.2, 0, 0, Math.PI * 2);
+    ctx.ellipse(bx + r * 0.2, by + r * 0.7, r * 0.7, r * 0.18, 0.15, 0, Math.PI * 2);
     ctx.fill();
 
     const ballImg = this.game.loader.getImage('ball');
     if (ballImg) {
-      ctx.shadowColor = 'rgba(0,0,0,0.3)';
-      ctx.shadowBlur = 10;
+      ctx.shadowColor = 'rgba(0,0,0,0.15)';
+      ctx.shadowBlur = 6;
       ctx.drawImage(ballImg, bx - r, by - r, r * 2, r * 2);
     } else {
       const grad = ctx.createRadialGradient(bx - r * 0.25, by - r * 0.25, r * 0.1, bx, by, r);

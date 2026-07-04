@@ -89,7 +89,7 @@ export class PracticeSetupScene extends Scene {
   }
 
   render(ctx) {
-    ctx.fillStyle = '#060814';
+    ctx.fillStyle = '#2a4a6a';
     ctx.fillRect(0, 0, 1920, 1080);
     this.renderBackground(ctx);
     this.renderTitle(ctx);

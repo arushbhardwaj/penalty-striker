@@ -95,7 +95,7 @@ export class TournamentMenuScene extends Scene {
   }
 
   render(ctx) {
-    ctx.fillStyle = '#060814';
+    ctx.fillStyle = '#2a4a6a';
     ctx.fillRect(0, 0, 1920, 1080);
     this.renderBackground(ctx);
     this.renderTitle(ctx);
@@ -317,7 +317,7 @@ export class TournamentResultScene extends Scene {
   }
 
   render(ctx) {
-    ctx.fillStyle = '#060814';
+    ctx.fillStyle = '#d0e0f0';
     ctx.fillRect(0, 0, 1920, 1080);
 
     const progress = Math.min(1, this.entranceTimer / 0.8);
@@ -327,10 +327,10 @@ export class TournamentResultScene extends Scene {
     ctx.save();
     ctx.globalAlpha = progress;
 
-    const glowColor = this.result.won ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)';
+    const glowColor = this.result.won ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.10)';
     const glow = ctx.createRadialGradient(960, 400, 10, 960, 400, 500);
     glow.addColorStop(0, glowColor);
-    glow.addColorStop(1, 'rgba(0,0,0,0)');
+    glow.addColorStop(1, 'rgba(100, 160, 220, 0)');
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, 1920, 1080);
 

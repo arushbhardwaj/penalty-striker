@@ -44,11 +44,11 @@ export class PauseScene extends Scene {
   render(ctx) {
     if (this.previousScene) this.previousScene.render(ctx);
 
-    ctx.fillStyle = 'rgba(5, 7, 12, 0.82)';
+    ctx.fillStyle = 'rgba(180, 205, 225, 0.85)';
     ctx.fillRect(0, 0, 1920, 1080);
 
     ctx.save();
-    ctx.fillStyle = 'rgba(17, 24, 39, 0.95)';
+    ctx.fillStyle = 'rgba(15, 30, 50, 0.92)';
     ctx.strokeStyle = 'rgba(14, 165, 233, 0.4)';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -100,17 +100,17 @@ export class GameOverScene extends Scene {
   }
 
   render(ctx) {
-    ctx.fillStyle = '#05070a';
+    ctx.fillStyle = '#d0e0f0';
     ctx.fillRect(0, 0, 1920, 1080);
 
     const ambientGlow = ctx.createRadialGradient(960, 540, 10, 960, 540, 500);
-    ambientGlow.addColorStop(0, this.stats.newRecord ? 'rgba(245, 158, 11, 0.08)' : 'rgba(139, 92, 246, 0.08)');
-    ambientGlow.addColorStop(1, 'rgba(0,0,0,0)');
+    ambientGlow.addColorStop(0, this.stats.newRecord ? 'rgba(245, 158, 11, 0.12)' : 'rgba(139, 92, 246, 0.10)');
+    ambientGlow.addColorStop(1, 'rgba(100, 160, 220, 0)');
     ctx.fillStyle = ambientGlow;
     ctx.fillRect(0, 0, 1920, 1080);
 
     ctx.save();
-    ctx.fillStyle = 'rgba(17, 24, 39, 0.85)';
+    ctx.fillStyle = 'rgba(15, 30, 50, 0.88)';
     ctx.strokeStyle = this.stats.newRecord ? COLORS.gold : COLORS.border;
     ctx.lineWidth = this.stats.newRecord ? 3 : 1.5;
     ctx.beginPath();
@@ -175,23 +175,23 @@ export class SettingsScene extends Scene {
   }
 
   render(ctx) {
-    ctx.fillStyle = '#060814';
+    ctx.fillStyle = '#8aaccc';
     ctx.fillRect(0, 0, 1920, 1080);
 
     ctx.save();
-    ctx.shadowColor = COLORS.blueGlow;
+    ctx.shadowColor = 'rgba(14, 165, 233, 0.3)';
     ctx.shadowBlur = 30;
     ctx.font = '900 64px Outfit, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = COLORS.white;
+    ctx.fillStyle = '#1a2a3a';
     ctx.fillText('SETTINGS', 960, 300);
     ctx.shadowBlur = 0;
 
     ctx.font = '500 22px Space Grotesk, monospace';
-    ctx.fillStyle = COLORS.darkSlate;
+    ctx.fillStyle = '#3a5a7a';
     ctx.fillText('SOUND SETTINGS & PREFERENCES', 960, 400);
-    ctx.fillStyle = '#475569';
+    ctx.fillStyle = '#4a6a8a';
     ctx.fillText('COMING SOON', 960, 460);
     ctx.restore();
 
@@ -225,21 +225,21 @@ export class HowToPlayScene extends Scene {
   }
 
   render(ctx) {
-    ctx.fillStyle = '#060814';
+    ctx.fillStyle = '#8aaccc';
     ctx.fillRect(0, 0, 1920, 1080);
 
     ctx.save();
-    ctx.shadowColor = COLORS.purpleGlow;
+    ctx.shadowColor = 'rgba(139, 92, 246, 0.3)';
     ctx.shadowBlur = 30;
     ctx.font = '900 64px Outfit, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = COLORS.white;
+    ctx.fillStyle = '#1a2a3a';
     ctx.fillText('HOW TO PLAY', 960, 250);
     ctx.shadowBlur = 0;
 
     ctx.font = '500 22px Space Grotesk, monospace';
-    ctx.fillStyle = COLORS.slate;
+    ctx.fillStyle = '#2a4a6a';
     ctx.textAlign = 'left';
     const instructions = [
       '1. SWIPE UP on the ball to shoot',
@@ -310,15 +310,15 @@ export class QuickPlayResultScene extends Scene {
   }
 
   render(ctx) {
-    ctx.fillStyle = '#05070a';
+    ctx.fillStyle = '#d0e0f0';
     ctx.fillRect(0, 0, 1920, 1080);
 
     const progress = Math.min(1, this.entranceTimer / 0.8);
 
-    const glowColor = this.result.isNewBest ? 'rgba(245, 158, 11, 0.08)' : 'rgba(16, 185, 129, 0.06)';
+    const glowColor = this.result.isNewBest ? 'rgba(245, 158, 11, 0.12)' : 'rgba(16, 185, 129, 0.10)';
     const ambientGlow = ctx.createRadialGradient(960, 540, 10, 960, 540, 500);
     ambientGlow.addColorStop(0, glowColor);
-    ambientGlow.addColorStop(1, 'rgba(0,0,0,0)');
+    ambientGlow.addColorStop(1, 'rgba(100, 160, 220, 0)');
     ctx.fillStyle = ambientGlow;
     ctx.fillRect(0, 0, 1920, 1080);
 

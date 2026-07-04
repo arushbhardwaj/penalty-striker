@@ -45,7 +45,7 @@ export class LoadingScene extends Scene {
   }
 
   render(ctx) {
-    ctx.fillStyle = '#05070c';
+    ctx.fillStyle = '#8aaccc';
     ctx.fillRect(0, 0, 1920, 1080);
 
     ctx.strokeStyle = 'rgba(16, 185, 129, 0.04)';
@@ -70,9 +70,9 @@ export class LoadingScene extends Scene {
     ctx.fillRect(0, 0, 1920, 1080);
 
     drawGlowingText(ctx, 'PENALTY STRIKER', 960, 430,
-      'bold 90px Outfit, sans-serif', COLORS.white, 'rgba(16, 185, 129, 0.4)', 25);
+      'bold 90px Outfit, sans-serif', '#1a2a3a', 'rgba(16, 185, 129, 0.3)', 25);
     drawGlowingText(ctx, 'LOADING' + this.dots, 960, 510,
-      '500 20px Space Grotesk, monospace', COLORS.green, 'transparent', 0);
+      '500 20px Space Grotesk, monospace', '#1a6a3a', 'transparent', 0);
 
     ctx.save();
     ctx.fillStyle = '#0f172a';
@@ -133,15 +133,16 @@ export class MainMenuScene extends Scene {
       });
     }
 
-    this.stars = [];
-    for (let i = 0; i < 50; i++) {
-      this.stars.push({
-        x: Math.random() * 1920,
-        y: Math.random() * 350,
-        size: Math.random() * 2 + 1,
-        baseAlpha: Math.random() * 0.5 + 0.2,
-        twinkleSpeed: Math.random() * 2 + 1,
-        twinklePhase: Math.random() * Math.PI * 2,
+    this.clouds = [];
+    for (let i = 0; i < 8; i++) {
+      this.clouds.push({
+        x: Math.random() * 2200 - 100,
+        y: 30 + Math.random() * 260,
+        w: 130 + Math.random() * 150,
+        h: 25 + Math.random() * 30,
+        speed: 0.04 + Math.random() * 0.06,
+        alpha: 0.5 + Math.random() * 0.3,
+        parts: Math.floor(4 + Math.random() * 3),
       });
     }
 
@@ -245,11 +246,7 @@ export class MainMenuScene extends Scene {
       if (b.y > 1080 + b.r * 2) b.y = -b.r;
     });
 
-    this.stars.forEach(s => {
-      const twinkle = Math.sin(time * 0.002 * s.twinkleSpeed + s.twinklePhase);
-      s.alpha = s.baseAlpha + twinkle * 0.15;
-      s.alpha = Math.max(0.1, Math.min(0.9, s.alpha));
-    });
+    // no star animation needed - clouds drift via render
 
     if (this.game.inputManager.isKeyJustPressed('Escape')) {
       this.game.soundManager.playSound('click');
@@ -257,73 +254,53 @@ export class MainMenuScene extends Scene {
   }
 
   render(ctx) {
-    ctx.fillStyle = '#060814';
+    // Bright daytime sky background
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, 1080);
+    skyGrad.addColorStop(0, '#6FBFFF');
+    skyGrad.addColorStop(0.3, '#85CEFF');
+    skyGrad.addColorStop(0.6, '#96D9FF');
+    skyGrad.addColorStop(1, '#B0E4FF');
+    ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, 1920, 1080);
 
-    this.renderStars(ctx);
-    this.renderFloodlights(ctx);
+    this.renderClouds(ctx);
     this.renderPitch(ctx);
     this.renderFootballParticles(ctx);
     this.renderTitle(ctx);
     this.renderFooter(ctx);
   }
 
-  renderStars(ctx) {
-    ctx.save();
-    this.stars.forEach(s => {
-      ctx.globalAlpha = s.alpha;
-      ctx.fillStyle = COLORS.white;
+  renderClouds(ctx) {
+    const time = performance.now() * 0.001;
+    this.clouds.forEach(cloud => {
+      const cx = ((cloud.x + time * cloud.speed * 25) % 2400 + 2400) % 2400 - 200;
+      ctx.save();
+      ctx.globalAlpha = cloud.alpha;
+      ctx.fillStyle = '#ffffff';
+      const n = cloud.parts;
+      for (let j = 0; j < n; j++) {
+        const angle = (j / n) * Math.PI * 2;
+        const dx = Math.cos(angle) * cloud.w * 0.28;
+        const dy = Math.sin(angle) * cloud.h * 0.25 - cloud.h * 0.05;
+        const r = cloud.w * (0.22 + Math.sin(j * 1.5) * 0.08);
+        ctx.beginPath();
+        ctx.arc(cx + dx, cloud.y + dy, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = 'rgba(200, 220, 240, 0.1)';
       ctx.beginPath();
-      ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+      ctx.arc(cx + cloud.w * 0.05, cloud.y + cloud.h * 0.15, cloud.w * 0.35, 0, Math.PI * 2);
       ctx.fill();
+      ctx.restore();
     });
-    ctx.restore();
-  }
-
-  renderFloodlights(ctx) {
-    this.drawFloodlight(ctx, 200, 100);
-    this.drawFloodlight(ctx, 1720, 100);
-  }
-
-  drawFloodlight(ctx, x, y) {
-    ctx.save();
-    const beam = ctx.createRadialGradient(x, y, 10, x, y + 250, 400);
-    beam.addColorStop(0, 'rgba(14, 165, 233, 0.12)');
-    beam.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = beam;
-    ctx.beginPath();
-    ctx.moveTo(x - 40, y);
-    ctx.lineTo(x + 40, y);
-    ctx.lineTo(x + 300, y + 500);
-    ctx.lineTo(x - 300, y + 500);
-    ctx.closePath();
-    ctx.fill();
-
-    const pulse = Math.sin(performance.now() * 0.002) * 0.2 + 0.8;
-    ctx.fillStyle = '#1e293b';
-    ctx.strokeStyle = '#475569';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.rect(x - 45, y - 25, 90, 45);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.shadowColor = COLORS.blue;
-    ctx.shadowBlur = 20 * pulse;
-    ctx.fillStyle = COLORS.white;
-    ctx.beginPath();
-    ctx.arc(x - 20, y, 8, 0, Math.PI * 2);
-    ctx.arc(x + 20, y, 8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
   }
 
   renderPitch(ctx) {
     ctx.save();
     const fieldGrad = ctx.createLinearGradient(960, 450, 960, 1080);
-    fieldGrad.addColorStop(0, COLORS.fieldDark);
-    fieldGrad.addColorStop(0.4, '#0d4a22');
-    fieldGrad.addColorStop(1, '#083216');
+    fieldGrad.addColorStop(0, '#2d8a4e');
+    fieldGrad.addColorStop(0.4, '#3da55e');
+    fieldGrad.addColorStop(1, '#1e7338');
     ctx.fillStyle = fieldGrad;
     ctx.beginPath();
     ctx.moveTo(300, 450);
@@ -333,7 +310,7 @@ export class MainMenuScene extends Scene {
     ctx.closePath();
     ctx.fill();
 
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
     for (let i = 0; i < 12; i++) {
       if (i % 2 === 0) {
         ctx.beginPath();
@@ -346,7 +323,7 @@ export class MainMenuScene extends Scene {
       }
     }
 
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.moveTo(300, 450);
@@ -355,7 +332,7 @@ export class MainMenuScene extends Scene {
     ctx.lineTo(1920, 1080);
     ctx.stroke();
 
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(550, 450);
@@ -364,7 +341,7 @@ export class MainMenuScene extends Scene {
     ctx.lineTo(1370, 450);
     ctx.stroke();
 
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(300, 450);
