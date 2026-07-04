@@ -530,26 +530,7 @@ export class GameplayScene extends Scene {
   }
 
   renderPracticeUI(ctx) {
-    ctx.save();
-    const isHover = this.practiceResetBtn.hovered;
-    ctx.shadowColor = isHover ? COLORS.purpleGlow : 'rgba(0,0,0,0.2)';
-    ctx.shadowBlur = isHover ? 20 : 5;
-    ctx.fillStyle = isHover ? COLORS.purple : 'rgba(30, 41, 59, 0.7)';
-    ctx.strokeStyle = isHover ? '#ffffff' : COLORS.border;
-    ctx.lineWidth = isHover ? 2 : 1;
-    ctx.beginPath();
-    drawRoundRect(ctx, this.practiceResetBtn.x - this.practiceResetBtn.w / 2,
-      this.practiceResetBtn.y - this.practiceResetBtn.h / 2,
-      this.practiceResetBtn.w, this.practiceResetBtn.h, 12);
-    ctx.fill();
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-    ctx.font = 'bold 16px Outfit, sans-serif';
-    ctx.fillStyle = isHover ? '#0b0f19' : COLORS.white;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(this.practiceResetBtn.label, this.practiceResetBtn.x, this.practiceResetBtn.y);
-    ctx.restore();
+    renderBaseButton(ctx, this.practiceResetBtn, COLORS.purple);
   }
 
   renderSwipeTutorial(ctx) {

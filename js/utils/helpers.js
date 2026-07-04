@@ -1,5 +1,37 @@
 import { COLORS } from '../config.js';
 
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+}
+
+function rgbToHex(r, g, b) {
+  return '#' + [r, g, b].map(x => {
+    const clamped = Math.max(0, Math.min(255, Math.round(x)));
+    return clamped.toString(16).padStart(2, '0');
+  }).join('');
+}
+
+function darkenColor(hex, factor) {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return hex;
+  return rgbToHex(rgb.r * (1 - factor), rgb.g * (1 - factor), rgb.b * (1 - factor));
+}
+
+function lightenColor(hex, factor) {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return hex;
+  return rgbToHex(
+    rgb.r + (255 - rgb.r) * factor,
+    rgb.g + (255 - rgb.g) * factor,
+    rgb.b + (255 - rgb.b) * factor
+  );
+}
+
 export function drawRoundRect(ctx, x, y, w, h, r) {
   if (ctx.roundRect) {
     ctx.roundRect(x, y, w, h, r);
@@ -41,23 +73,53 @@ export function isPointerOverButton(pointer, btn) {
   );
 }
 
-export function renderBaseButton(ctx, btn, color, hoverColor) {
+export function renderBaseButton(ctx, btn, color) {
   ctx.save();
   const isHover = btn.hovered;
-  ctx.shadowColor = isHover ? color : 'rgba(0,0,0,0.2)';
-  ctx.shadowBlur = isHover ? 20 : 5;
-  ctx.fillStyle = isHover ? color : 'rgba(30, 41, 59, 0.6)';
-  ctx.strokeStyle = isHover ? '#ffffff' : COLORS.border;
-  ctx.lineWidth = isHover ? 2 : 1;
+  const r = 16;
+  const depth = 5;
+  const outlineW = 3;
+
+  const depthColor = darkenColor(color, 0.25);
+  const outlineColor = darkenColor(color, 0.5);
+
+  const x = btn.x - btn.w / 2;
+  const y = btn.y - btn.h / 2;
+  const cx = btn.x;
+  const cy = btn.y;
+
+  // Slight scale on hover
+  if (isHover) {
+    ctx.translate(cx, cy);
+    ctx.scale(1.03, 1.03);
+    ctx.translate(-cx, -cy);
+  }
+
+  // Depth layer (bottom offset)
+  ctx.fillStyle = depthColor;
   ctx.beginPath();
-  drawRoundRect(ctx, btn.x - btn.w / 2, btn.y - btn.h / 2, btn.w, btn.h, 12);
+  drawRoundRect(ctx, x, y + depth, btn.w, btn.h, r);
   ctx.fill();
+
+  // Main body
+  ctx.fillStyle = isHover ? lightenColor(color, 0.12) : color;
+  ctx.beginPath();
+  drawRoundRect(ctx, x, y, btn.w, btn.h, r);
+  ctx.fill();
+
+  // Outline
+  ctx.strokeStyle = outlineColor;
+  ctx.lineWidth = outlineW;
+  ctx.beginPath();
+  drawRoundRect(ctx, x, y, btn.w, btn.h, r);
   ctx.stroke();
-  ctx.shadowBlur = 0;
-  ctx.font = 'bold 20px Outfit, sans-serif';
-  ctx.fillStyle = isHover ? '#0b0f19' : '#e2e8f0';
+
+  // Text
+  ctx.font = 'bold 22px Outfit, sans-serif';
+  ctx.fillStyle = '#000000';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(btn.label, btn.x, btn.y);
+  ctx.fillText(btn.label, cx, cy + (isHover ? -1 : 0));
+
   ctx.restore();
 }

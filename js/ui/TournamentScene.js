@@ -1,7 +1,7 @@
 import { Scene } from '../game.js';
 import { COLORS } from '../config.js';
 import { TOURNAMENTS } from '../gamemodes/TournamentConfig.js';
-import { drawRoundRect, drawGlowingText, isPointerOverButton } from '../utils/helpers.js';
+import { drawRoundRect, drawGlowingText, isPointerOverButton, renderBaseButton } from '../utils/helpers.js';
 
 export class TournamentMenuScene extends Scene {
   constructor(game) {
@@ -209,25 +209,7 @@ export class TournamentMenuScene extends Scene {
   renderResumeButton(ctx) {
     const tm = this.game.modeManager.tournament;
     if (!tm.canContinue()) return;
-    ctx.save();
-    const isHover = this.resumeBtn.hovered;
-    ctx.shadowColor = COLORS.purpleGlow;
-    ctx.shadowBlur = isHover ? 20 : 5;
-    ctx.fillStyle = isHover ? COLORS.purple : 'rgba(30, 41, 59, 0.6)';
-    ctx.strokeStyle = isHover ? '#ffffff' : COLORS.border;
-    ctx.lineWidth = isHover ? 2 : 1;
-    ctx.beginPath();
-    drawRoundRect(ctx, this.resumeBtn.x - this.resumeBtn.w / 2, this.resumeBtn.y - this.resumeBtn.h / 2,
-      this.resumeBtn.w, this.resumeBtn.h, 14);
-    ctx.fill();
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-    ctx.font = 'bold 20px Outfit, sans-serif';
-    ctx.fillStyle = isHover ? '#0b0f19' : COLORS.white;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(this.resumeBtn.label, this.resumeBtn.x, this.resumeBtn.y);
-    ctx.restore();
+    renderBaseButton(ctx, this.resumeBtn, COLORS.purple);
   }
 
   renderFooter(ctx) {
@@ -240,22 +222,7 @@ export class TournamentMenuScene extends Scene {
   }
 
   renderBackButton(ctx) {
-    ctx.save();
-    const isHover = this.backBtn.hovered;
-    ctx.fillStyle = isHover ? 'rgba(255,255,255,0.1)' : 'rgba(15, 23, 42, 0.6)';
-    ctx.strokeStyle = COLORS.border;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    drawRoundRect(ctx, this.backBtn.x - this.backBtn.w / 2, this.backBtn.y - this.backBtn.h / 2,
-      this.backBtn.w, this.backBtn.h, 12);
-    ctx.fill();
-    ctx.stroke();
-    ctx.font = 'bold 18px Outfit, sans-serif';
-    ctx.fillStyle = COLORS.white;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(this.backBtn.label, this.backBtn.x, this.backBtn.y);
-    ctx.restore();
+    renderBaseButton(ctx, this.backBtn, '#6a8aaa');
   }
 }
 
@@ -376,31 +343,10 @@ export class TournamentResultScene extends Scene {
 
     ctx.restore();
 
-    this.renderButton(ctx, this.continueBtn,
+    renderBaseButton(ctx, this.continueBtn,
       this.result.isChampion ? COLORS.gold : (this.result.won ? COLORS.green : COLORS.purple));
-    this.renderButton(ctx, this.menuBtn, '#475569');
+    renderBaseButton(ctx, this.menuBtn, '#6a8aaa');
 
-    ctx.restore();
-  }
-
-  renderButton(ctx, btn, color) {
-    ctx.save();
-    const isHover = btn.hovered;
-    ctx.shadowColor = isHover ? color : 'rgba(0,0,0,0.2)';
-    ctx.shadowBlur = isHover ? 20 : 5;
-    ctx.fillStyle = isHover ? color : 'rgba(30, 41, 59, 0.6)';
-    ctx.strokeStyle = isHover ? '#ffffff' : COLORS.border;
-    ctx.lineWidth = isHover ? 2 : 1;
-    ctx.beginPath();
-    drawRoundRect(ctx, btn.x - btn.w / 2, btn.y - btn.h / 2, btn.w, btn.h, 12);
-    ctx.fill();
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-    ctx.font = 'bold 20px Outfit, sans-serif';
-    ctx.fillStyle = isHover ? '#0b0f19' : COLORS.white;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(btn.label, btn.x, btn.y);
     ctx.restore();
   }
 

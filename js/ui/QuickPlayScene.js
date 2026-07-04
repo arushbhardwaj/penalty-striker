@@ -199,21 +199,6 @@ export class QuickPlaySetupScene extends Scene {
   }
 
   renderBackButton(ctx) {
-    ctx.save();
-    const isHover = this.backBtn.hovered;
-    ctx.fillStyle = isHover ? 'rgba(255,255,255,0.1)' : 'rgba(15, 23, 42, 0.6)';
-    ctx.strokeStyle = COLORS.border;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    drawRoundRect(ctx, this.backBtn.x - this.backBtn.w / 2, this.backBtn.y - this.backBtn.h / 2,
-      this.backBtn.w, this.backBtn.h, 12);
-    ctx.fill();
-    ctx.stroke();
-    ctx.font = 'bold 18px Outfit, sans-serif';
-    ctx.fillStyle = COLORS.white;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(this.backBtn.label, this.backBtn.x, this.backBtn.y);
-    ctx.restore();
+    renderBaseButton(ctx, this.backBtn, '#6a8aaa');
   }
 }

@@ -148,6 +148,8 @@ export class MainMenuScene extends Scene {
 
     this.entranceTimer = 0;
     this.entranceDuration = 1.0;
+    this.logoBounceTimer = 8 + Math.random() * 2;
+    this.logoBounceProgress = 0;
   }
 
   enter() {
@@ -246,7 +248,15 @@ export class MainMenuScene extends Scene {
       if (b.y > 1080 + b.r * 2) b.y = -b.r;
     });
 
-    // no star animation needed - clouds drift via render
+    this.logoBounceTimer -= dt;
+    if (this.logoBounceTimer <= 0) {
+      this.logoBounceProgress = 0.001;
+      this.logoBounceTimer = 8 + Math.random() * 2;
+    }
+    if (this.logoBounceProgress > 0) {
+      this.logoBounceProgress += dt * 3;
+      if (this.logoBounceProgress >= 1) this.logoBounceProgress = 0;
+    }
 
     if (this.game.inputManager.isKeyJustPressed('Escape')) {
       this.game.soundManager.playSound('click');
@@ -266,6 +276,16 @@ export class MainMenuScene extends Scene {
     this.renderClouds(ctx);
     this.renderPitch(ctx);
     this.renderFootballParticles(ctx);
+
+    // Soft blur background so it doesn't compete with UI
+    ctx.save();
+    if (typeof ctx.filter !== 'undefined') {
+      ctx.filter = 'blur(3px)';
+      ctx.drawImage(this.game.canvas, 0, 0);
+      ctx.filter = 'none';
+    }
+    ctx.restore();
+
     this.renderTitle(ctx);
     this.renderFooter(ctx);
   }
@@ -297,25 +317,27 @@ export class MainMenuScene extends Scene {
 
   renderPitch(ctx) {
     ctx.save();
-    const fieldGrad = ctx.createLinearGradient(960, 450, 960, 1080);
-    fieldGrad.addColorStop(0, '#2d8a4e');
-    fieldGrad.addColorStop(0.4, '#3da55e');
-    fieldGrad.addColorStop(1, '#1e7338');
+    const H = 410;
+    const fieldGrad = ctx.createLinearGradient(960, H, 960, 1080);
+    fieldGrad.addColorStop(0, '#267a42');
+    fieldGrad.addColorStop(0.4, '#359050');
+    fieldGrad.addColorStop(1, '#196530');
     ctx.fillStyle = fieldGrad;
     ctx.beginPath();
-    ctx.moveTo(300, 450);
-    ctx.lineTo(1620, 450);
+    ctx.moveTo(310, H);
+    ctx.lineTo(1610, H);
     ctx.lineTo(1920, 1080);
     ctx.lineTo(0, 1080);
     ctx.closePath();
     ctx.fill();
 
     ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+    const seg = (1610 - 310) / 12;
     for (let i = 0; i < 12; i++) {
       if (i % 2 === 0) {
         ctx.beginPath();
-        ctx.moveTo(300 + i * 110, 450);
-        ctx.lineTo(300 + (i + 1) * 110, 450);
+        ctx.moveTo(310 + i * seg, H);
+        ctx.lineTo(310 + (i + 1) * seg, H);
         ctx.lineTo(i * 160 + 160, 1080);
         ctx.lineTo(i * 160, 1080);
         ctx.closePath();
@@ -326,26 +348,26 @@ export class MainMenuScene extends Scene {
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(300, 450);
+    ctx.moveTo(310, H);
     ctx.lineTo(0, 1080);
-    ctx.moveTo(1620, 450);
+    ctx.moveTo(1610, H);
     ctx.lineTo(1920, 1080);
     ctx.stroke();
 
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(550, 450);
+    ctx.moveTo(560, H);
     ctx.lineTo(400, 550);
     ctx.lineTo(1520, 550);
-    ctx.lineTo(1370, 450);
+    ctx.lineTo(1360, H);
     ctx.stroke();
 
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(300, 450);
-    ctx.lineTo(1620, 450);
+    ctx.moveTo(310, H);
+    ctx.lineTo(1610, H);
     ctx.stroke();
     ctx.restore();
   }
@@ -403,25 +425,65 @@ export class MainMenuScene extends Scene {
     ctx.save();
     ctx.globalAlpha = easeOut;
 
-    ctx.shadowColor = 'rgba(16, 185, 129, 0.2)';
-    ctx.shadowBlur = 60;
-    ctx.font = '900 100px Outfit, sans-serif';
+    const bounce = this.logoBounceProgress;
+    let scale = 1;
+    if (bounce > 0) {
+      const t = bounce < 0.5 ? bounce * 2 : 2 - bounce * 2;
+      scale = 1 + 0.02 * (1 - Math.pow(1 - t, 2));
+    }
+
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = COLORS.white;
-    ctx.fillText('PENALTY', 960, 220);
+    ctx.lineJoin = 'round';
 
+    // Soft drop shadow for the whole logo
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+    ctx.shadowBlur = 12;
+    ctx.shadowOffsetY = 4;
+
+    // "PENALTY" - gold gradient with bold black border
+    ctx.save();
+    ctx.translate(960, 210);
+    ctx.scale(scale, scale);
+    ctx.translate(-960, -210);
+    const goldGrad = ctx.createLinearGradient(960, 160, 960, 260);
+    goldGrad.addColorStop(0, '#FFD700');
+    goldGrad.addColorStop(0.5, '#FFB800');
+    goldGrad.addColorStop(1, '#FF8C00');
+    ctx.font = '900 112px Outfit, sans-serif';
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 7;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+    ctx.shadowBlur = 12;
+    ctx.shadowOffsetY = 4;
+    ctx.strokeText('PENALTY', 960, 210);
+    ctx.fillStyle = goldGrad;
+    ctx.fillText('PENALTY', 960, 210);
+    ctx.restore();
+
+    // "STRIKER" - white with bold black border + green glow
+    ctx.save();
+    ctx.translate(960, 315);
+    ctx.scale(scale, scale);
+    ctx.translate(-960, -315);
+    ctx.font = '900 112px Outfit, sans-serif';
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 7;
     ctx.shadowColor = 'rgba(16, 185, 129, 0.5)';
-    ctx.shadowBlur = 80;
-    ctx.fillStyle = COLORS.green;
-    ctx.fillText('STRIKER', 960, 325);
+    ctx.shadowBlur = 60;
+    ctx.shadowOffsetY = 0;
+    ctx.strokeText('STRIKER', 960, 315);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('STRIKER', 960, 315);
+    ctx.restore();
 
-    ctx.shadowBlur = 0;
-    ctx.font = '600 28px Outfit, sans-serif';
-    ctx.fillStyle = 'rgba(148, 163, 184, 0.9)';
-    ctx.shadowColor = 'rgba(148, 163, 184, 0.15)';
-    ctx.shadowBlur = 15;
-    ctx.fillText('CAN YOU SCORE THE WINNING PENALTY?', 960, 430);
+    // Tagline
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+    ctx.shadowBlur = 6;
+    ctx.shadowOffsetY = 2;
+    ctx.font = '700 26px Outfit, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('CAN YOU SCORE THE WINNING PENALTY?', 960, 415);
 
     ctx.restore();
   }

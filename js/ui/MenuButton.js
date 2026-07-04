@@ -78,9 +78,7 @@ export class MenuButton {
     if (c.borderWidth) btn.style.setProperty('--b-outline', c.borderWidth);
     if (c.depth) btn.style.setProperty('--b-depth', c.depth);
     btn.style.setProperty('--btn-transition', c.transitionDuration);
-    btn.style.animationDelay = c.entranceDelay;
     btn.style.opacity = '0';
-    btn.style.transform = 'translateY(24px)';
 
     if (c.colors) {
       this._applyCustomColors(btn, c.colors);
@@ -95,20 +93,13 @@ export class MenuButton {
     if (container) {
       container.appendChild(btn);
       btn.getBoundingClientRect();
-      btn.style.transition =
-        `opacity ${c.transitionDuration} ease ${c.entranceDelay}, ` +
-        `transform ${c.transitionDuration} ease ${c.entranceDelay}`;
+      btn.style.transition = `opacity ${c.transitionDuration} ease ${c.entranceDelay}`;
       btn.style.opacity = '1';
-      btn.style.transform = 'translateY(0)';
 
-      const onEntranceEnd = (e) => {
-        if (e.propertyName === 'transform') {
-          btn.style.transform = '';
-          btn.style.transition = '';
-          btn.removeEventListener('transitionend', onEntranceEnd);
-        }
-      };
-      btn.addEventListener('transitionend', onEntranceEnd);
+      const td = c.transitionDuration;
+      const tdMs = td.endsWith('ms') ? parseFloat(td) : parseFloat(td) * 1000;
+      const total = tdMs + (parseFloat(c.entranceDelay) || 0) * 1000 + 50;
+      setTimeout(() => { btn.style.transition = ''; }, total);
     }
 
     return btn;
