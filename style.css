@@ -192,22 +192,20 @@ html, body {
 }
 
 .menu-buttons {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: clamp(10px, 1.5vh, 18px);
-    width: 90%;
-    max-width: 380px;
-    margin-top: min(8vh, 80px);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    width: auto;
+    max-width: 540px;
+    margin-top: min(14vh, 150px);
+    justify-content: center;
 }
 
 .menu-buttons .game-btn {
-    font-size: clamp(0.9rem, 1.5vw, 1.35rem);
-    min-height: 3.5em;
-    max-width: 100%;
     width: 100%;
+    min-width: 160px;
     pointer-events: auto;
-    --b-radius: clamp(12px, 1.2vw, 18px);
+    --b-radius: 20px;
 }
 
 /* -------------------------------------------------------------

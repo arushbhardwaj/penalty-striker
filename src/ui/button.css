@@ -1,63 +1,43 @@
 :root {
-  /* ── Green theme (Tournament) ── */
-  --btn-green-outline:    #020702;
-  --btn-green-glossy-top: #e9fbad;
-  --btn-green-glossy-bot: #d4f48f;
-  --btn-green-face-top:   #7ed116;
-  --btn-green-face-bot:   #7ace16;
-  --btn-green-glossband:  #d0f295;
-  --btn-green-body-top:   #7cd016;
-  --btn-green-body-bot:   #5ec411;
-  --btn-green-separator:  #053302;
-  --btn-green-depth-fill: #177f02;
-  --btn-green-shadow:     #0a3205;
-
   /* ── Red theme (Quick Play) ── */
-  --btn-red-outline:    #190000;
-  --btn-red-glossy-top: #fdc8c4;
-  --btn-red-glossy-bot: #fbc1bb;
-  --btn-red-face-top:   #f8232b;
-  --btn-red-face-bot:   #f71f1e;
-  --btn-red-glossband:  #feb4b1;
-  --btn-red-body-top:   #f8222a;
-  --btn-red-body-bot:   #c00a10;
-  --btn-red-separator:  #290001;
-  --btn-red-depth-fill: #a00205;
-  --btn-red-shadow:     #3a0000;
+  --btn-red-bg: #FF5D5D;
+  --btn-red-depth: #D93A3A;
+  --btn-red-outline: #4A0000;
 
   /* ── Yellow theme (Practice) ── */
-  --btn-yellow-outline:    #181102;
-  --btn-yellow-glossy-top: #fbf1c1;
-  --btn-yellow-glossy-bot: #fff8b5;
-  --btn-yellow-face-top:   #fdc61b;
-  --btn-yellow-face-bot:   #fdc617;
-  --btn-yellow-glossband:  #fded9e;
-  --btn-yellow-body-top:   #fdc71a;
-  --btn-yellow-body-bot:   #fab811;
-  --btn-yellow-separator:  #5f3201;
-  --btn-yellow-depth-fill: #dc8d01;
-  --btn-yellow-shadow:     #5c3300;
+  --btn-yellow-bg: #FFE34D;
+  --btn-yellow-depth: #CCB63A;
+  --btn-yellow-outline: #5C4A00;
+
+  /* ── Blue theme (Tournament) ── */
+  --btn-blue-bg: #6E97F2;
+  --btn-blue-depth: #5578CC;
+  --btn-blue-outline: #1A3370;
+
+  /* ── Green theme (Future) ── */
+  --btn-green-bg: #3DD66C;
+  --btn-green-depth: #2CAD54;
+  --btn-green-outline: #004D1A;
 }
 
 /* ═══════════════════════════════════════════
    GAME BUTTON  —  base structure
    ═══════════════════════════════════════════ */
 .game-btn {
-  /* em-based dimensions scale with font-size */
-  --b-depth:   0.5em;
-  --b-outline: 0.04em;
-  --b-radius:  0.35em;
-  --btn-transition: 120ms;
+  --b-radius:  20px;
+  --b-outline: 4px;
+  --b-depth:   6px;
+  --btn-transition: 100ms;
 
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
 
   width: 100%;
-  max-width: 520px;
-  min-height: 4em;
-  padding: 0 1.2em;
+  padding: 16px 20px;
+  min-height: 64px;
 
   border: var(--b-outline) solid var(--btn-outline);
   border-radius: var(--b-radius);
@@ -66,69 +46,55 @@
   outline: none;
   -webkit-tap-highlight-color: transparent;
 
-  /* ── typography ── */
-  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-weight: 800;
-  font-size: 1.5rem;
-  letter-spacing: 0.08em;
-  text-align: center;
-  color: #ffffff;
-  text-shadow: 0 0.03em 0 var(--btn-shadow);
+  /* solid flat background (no gradients) */
+  background: var(--btn-bg);
 
-  /* ── body gradient ── */
-  background: linear-gradient(to bottom, var(--btn-body-top) 0%, var(--btn-body-bot) 100%);
-
-  /* ── shadows (layered bottom-to-top) ──
-       1. external soft shadow
-       2. bottom edge outline
-       3. depth fill
-       4. separator line (inset at bottom) */
+  /* 3D bottom edge + soft shadow */
   box-shadow:
-    0 0.5em 1.2em -0.3em rgba(0, 0, 0, 0.5),
-    0 calc(var(--b-depth) + var(--b-outline)) 0 0 var(--btn-outline),
-    0 var(--b-depth) 0 0 var(--btn-depth-fill),
-    inset 0 calc(-1 * var(--b-outline)) 0 0 var(--btn-separator);
+    0 var(--b-depth) 0 0 var(--btn-depth),
+    0 8px 20px -5px rgba(0, 0, 0, 0.35);
 
   transform: translateY(0);
   transition:
-    transform var(--btn-transition) ease,
-    box-shadow var(--btn-transition) ease,
-    filter var(--btn-transition) ease;
+    transform var(--btn-transition) ease-out,
+    box-shadow var(--btn-transition) ease-out,
+    filter var(--btn-transition) ease-out;
+
+  /* typography */
+  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 800;
+  font-size: clamp(0.95rem, 1.6vw, 1.5rem);
+  color: #000000;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-align: left;
+  line-height: 1.2;
 }
 
 .game-btn::-moz-focus-inner {
   border: 0;
 }
 
-/* ── Glossy highlight + face gradient + glossy band ── */
-.game-btn::before {
-  content: '';
-  position: absolute;
-  z-index: 1;
+/* ── Icon (left side) ── */
+.game-btn .btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
   pointer-events: none;
-  top: calc(-1 * var(--b-outline));
-  left: calc(-1 * var(--b-outline));
-  right: calc(-1 * var(--b-outline));
-  height: 0.9em;
-  background: linear-gradient(to bottom,
-    var(--btn-glossy-top)   0%,
-    var(--btn-glossy-bot)  18%,
-    var(--btn-face-top)    24%,
-    var(--btn-face-bot)    42%,
-    var(--btn-glossband)   50%,
-    var(--btn-body-top)    60%,
-    transparent           100%
-  );
-  border-radius: var(--b-radius) var(--b-radius) 0 0;
+}
+
+.game-btn .btn-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 /* ── Text wrapper ── */
 .game-btn .btn-text {
-  position: relative;
-  z-index: 2;
-  display: inline-block;
   white-space: nowrap;
-  padding: 0.5em 0;
 }
 
 /* ═══════════════════════════════════════════
@@ -137,22 +103,20 @@
 
 .game-btn:hover:not(:disabled) {
   transform: scale(1.02);
-  filter: brightness(1.15);
+  filter: brightness(1.1);
   transition:
-    transform var(--btn-transition) ease,
-    filter var(--btn-transition) ease;
+    transform var(--btn-transition) ease-out,
+    filter var(--btn-transition) ease-out;
 }
 
 .game-btn:active:not(:disabled) {
   transform: translateY(var(--b-depth)) scale(1.02);
   box-shadow:
-    0 0.3em 0.8em -0.2em rgba(0, 0, 0, 0.4),
-    0 var(--b-outline) 0 0 var(--btn-outline),
-    0 0 0 0 var(--btn-depth-fill),
-    inset 0 0 0 0 transparent;
+    0 0 0 0 var(--btn-depth),
+    0 2px 6px -3px rgba(0, 0, 0, 0.25);
   transition:
-    transform 80ms ease,
-    box-shadow 80ms ease;
+    transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 120ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .game-btn:active:not(:disabled)::after {
@@ -160,71 +124,50 @@
   position: absolute;
   z-index: 5;
   pointer-events: none;
-  top: calc(-0.25em - var(--b-outline));
-  left: calc(-0.25em - var(--b-outline));
-  right: calc(-0.25em - var(--b-outline));
-  bottom: calc(-0.25em - var(--b-outline));
-  border: 0.12em solid rgba(255, 255, 255, 0.85);
-  border-radius: calc(var(--b-radius) + 0.25em);
+  top: calc(-6px - var(--b-outline));
+  left: calc(-6px - var(--b-outline));
+  right: calc(-6px - var(--b-outline));
+  bottom: calc(-6px - var(--b-outline));
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  border-radius: calc(var(--b-radius) + 7px);
 }
 
 .game-btn:focus-visible {
-  outline: 0.12em solid rgba(255, 255, 255, 0.7);
-  outline-offset: 0.25em;
+  outline: 3px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 6px;
 }
 
 .game-btn:disabled {
   cursor: not-allowed;
   filter: saturate(0.5) brightness(0.7);
   transform: none !important;
-  box-shadow:
-    0 calc(var(--b-depth) + var(--b-outline)) 0 0 var(--btn-outline),
-    0 var(--b-depth) 0 0 var(--btn-depth-fill),
-    inset 0 calc(-1 * var(--b-outline)) 0 0 var(--btn-separator) !important;
+  box-shadow: none !important;
 }
 
 /* ═══════════════════════════════════════════
    THEMES
    ═══════════════════════════════════════════ */
 
-.game-btn--green {
-  --btn-outline:    var(--btn-green-outline);
-  --btn-glossy-top: var(--btn-green-glossy-top);
-  --btn-glossy-bot: var(--btn-green-glossy-bot);
-  --btn-face-top:   var(--btn-green-face-top);
-  --btn-face-bot:   var(--btn-green-face-bot);
-  --btn-glossband:  var(--btn-green-glossband);
-  --btn-body-top:   var(--btn-green-body-top);
-  --btn-body-bot:   var(--btn-green-body-bot);
-  --btn-separator:  var(--btn-green-separator);
-  --btn-depth-fill: var(--btn-green-depth-fill);
-  --btn-shadow:     var(--btn-green-shadow);
-}
-
 .game-btn--red {
-  --btn-outline:    var(--btn-red-outline);
-  --btn-glossy-top: var(--btn-red-glossy-top);
-  --btn-glossy-bot: var(--btn-red-glossy-bot);
-  --btn-face-top:   var(--btn-red-face-top);
-  --btn-face-bot:   var(--btn-red-face-bot);
-  --btn-glossband:  var(--btn-red-glossband);
-  --btn-body-top:   var(--btn-red-body-top);
-  --btn-body-bot:   var(--btn-red-body-bot);
-  --btn-separator:  var(--btn-red-separator);
-  --btn-depth-fill: var(--btn-red-depth-fill);
-  --btn-shadow:     var(--btn-red-shadow);
+  --btn-bg: var(--btn-red-bg);
+  --btn-depth: var(--btn-red-depth);
+  --btn-outline: var(--btn-red-outline);
 }
 
 .game-btn--yellow {
-  --btn-outline:    var(--btn-yellow-outline);
-  --btn-glossy-top: var(--btn-yellow-glossy-top);
-  --btn-glossy-bot: var(--btn-yellow-glossy-bot);
-  --btn-face-top:   var(--btn-yellow-face-top);
-  --btn-face-bot:   var(--btn-yellow-face-bot);
-  --btn-glossband:  var(--btn-yellow-glossband);
-  --btn-body-top:   var(--btn-yellow-body-top);
-  --btn-body-bot:   var(--btn-yellow-body-bot);
-  --btn-separator:  var(--btn-yellow-separator);
-  --btn-depth-fill: var(--btn-yellow-depth-fill);
-  --btn-shadow:     var(--btn-yellow-shadow);
+  --btn-bg: var(--btn-yellow-bg);
+  --btn-depth: var(--btn-yellow-depth);
+  --btn-outline: var(--btn-yellow-outline);
+}
+
+.game-btn--blue {
+  --btn-bg: var(--btn-blue-bg);
+  --btn-depth: var(--btn-blue-depth);
+  --btn-outline: var(--btn-blue-outline);
+}
+
+.game-btn--green {
+  --btn-bg: var(--btn-green-bg);
+  --btn-depth: var(--btn-green-depth);
+  --btn-outline: var(--btn-green-outline);
 }

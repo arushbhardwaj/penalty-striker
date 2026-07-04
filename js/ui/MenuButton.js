@@ -4,17 +4,18 @@ export class MenuButton {
     theme = 'red',
     onClick = null,
     sceneName = null,
+    icon = null,
     width = '100%',
     maxWidth = '400px',
-    fontSize = 'clamp(0.9rem, 1.5vw, 1.4rem)',
+    fontSize = 'clamp(1.2rem, 2vw, 2rem)',
     borderRadius = null,
-    borderWidth = '0.04em',
-    depth = '0.5em',
-    transitionDuration = '120ms',
-    fontFamily = "'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    borderWidth = null,
+    depth = null,
+    transitionDuration = '100ms',
+    fontFamily = "'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     fontWeight = '800',
-    letterSpacing = '0.08em',
-    minHeight = '3.8em',
+    letterSpacing = '0.02em',
+    minHeight = null,
     entranceDelay = '0s',
     colors = null,
   } = {}) {
@@ -23,6 +24,7 @@ export class MenuButton {
       theme,
       onClick,
       sceneName,
+      icon,
       width,
       maxWidth,
       fontSize,
@@ -53,6 +55,13 @@ export class MenuButton {
       btn.dataset.scene = c.sceneName;
     }
 
+    if (c.icon) {
+      const iconSpan = document.createElement('span');
+      iconSpan.className = 'btn-icon';
+      iconSpan.innerHTML = c.icon;
+      btn.appendChild(iconSpan);
+    }
+
     const span = document.createElement('span');
     span.className = 'btn-text';
     span.textContent = c.label;
@@ -61,13 +70,13 @@ export class MenuButton {
     btn.style.width = c.width;
     btn.style.maxWidth = c.maxWidth;
     btn.style.fontSize = c.fontSize;
-    btn.style.minHeight = c.minHeight;
+    if (c.minHeight) btn.style.minHeight = c.minHeight;
     btn.style.fontFamily = c.fontFamily;
     btn.style.fontWeight = c.fontWeight;
     btn.style.letterSpacing = c.letterSpacing;
-    btn.style.setProperty('--b-radius', c.borderRadius);
-    btn.style.setProperty('--b-outline', c.borderWidth);
-    btn.style.setProperty('--b-depth', c.depth);
+    if (c.borderRadius) btn.style.setProperty('--b-radius', c.borderRadius);
+    if (c.borderWidth) btn.style.setProperty('--b-outline', c.borderWidth);
+    if (c.depth) btn.style.setProperty('--b-depth', c.depth);
     btn.style.setProperty('--btn-transition', c.transitionDuration);
     btn.style.animationDelay = c.entranceDelay;
     btn.style.opacity = '0';
@@ -91,6 +100,15 @@ export class MenuButton {
         `transform ${c.transitionDuration} ease ${c.entranceDelay}`;
       btn.style.opacity = '1';
       btn.style.transform = 'translateY(0)';
+
+      const onEntranceEnd = (e) => {
+        if (e.propertyName === 'transform') {
+          btn.style.transform = '';
+          btn.style.transition = '';
+          btn.removeEventListener('transitionend', onEntranceEnd);
+        }
+      };
+      btn.addEventListener('transitionend', onEntranceEnd);
     }
 
     return btn;
@@ -98,17 +116,9 @@ export class MenuButton {
 
   _applyCustomColors(btn, colors) {
     const map = {
+      bg: '--btn-bg',
+      depth: '--btn-depth',
       outline: '--btn-outline',
-      glossyTop: '--btn-glossy-top',
-      glossyBot: '--btn-glossy-bot',
-      faceTop: '--btn-face-top',
-      faceBot: '--btn-face-bot',
-      glossband: '--btn-glossband',
-      bodyTop: '--btn-body-top',
-      bodyBot: '--btn-body-bot',
-      separator: '--btn-separator',
-      depthFill: '--btn-depth-fill',
-      shadow: '--btn-shadow',
     };
     for (const [key, prop] of Object.entries(map)) {
       if (colors[key] !== undefined) {

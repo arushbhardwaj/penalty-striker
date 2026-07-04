@@ -196,13 +196,15 @@ export class MainMenuScene extends Scene {
         sceneName: 'QuickPlaySetup',
         onClick: makeHandler('QuickPlaySetup'),
         entranceDelay: '0.20s',
+        icon: '<svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21" fill="black"/></svg>',
       }),
       MenuButton.create(container, {
         label: 'TOURNAMENT',
-        theme: 'green',
+        theme: 'blue',
         sceneName: 'TournamentMenu',
         onClick: makeHandler('TournamentMenu'),
         entranceDelay: '0.32s',
+        icon: '<svg viewBox="0 0 24 24" fill="black"><path d="M7 4v4.5a5 5 0 0 0 10 0V4H7z"/><path d="M4.5 5.5C3 6 2.5 8.5 4.5 10l1-1.5c-.7-.5-.4-2 0-3h-1z"/><path d="M19.5 5.5c1.5.5 2 3 0 4.5l-1-1.5c.7-.5.4-2 0-3h1z"/><rect x="11" y="12" width="2" height="3"/><rect x="7.5" y="15" width="9" height="4" rx="1"/></svg>',
       }),
       MenuButton.create(container, {
         label: 'PRACTICE',
@@ -210,6 +212,13 @@ export class MainMenuScene extends Scene {
         sceneName: 'PracticeSetup',
         onClick: makeHandler('PracticeSetup'),
         entranceDelay: '0.44s',
+        icon: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="black" stroke-width="2.5" fill="none"/><circle cx="12" cy="12" r="6" stroke="black" stroke-width="2.5" fill="none"/><circle cx="12" cy="12" r="2" fill="black"/></svg>',
+      }),
+      MenuButton.create(container, {
+        label: 'COMING SOON',
+        theme: 'green',
+        entranceDelay: '0.56s',
+        icon: '<svg viewBox="0 0 24 24"><polygon points="12,2 15,9 23,9 16.5,14 18.5,22 12,17 5.5,22 7.5,14 1,9 9,9" fill="black"/></svg>',
       }),
     ];
   }
@@ -431,9 +440,11 @@ export class MainMenuScene extends Scene {
     ctx.fillText('STRIKER', 960, 325);
 
     ctx.shadowBlur = 0;
-    ctx.font = '500 16px Space Grotesk, monospace';
-    ctx.fillStyle = 'rgba(148, 163, 184, 0.8)';
-    ctx.fillText('CAN YOU SCORE THE WINNING PENALTY?', 960, 400);
+    ctx.font = '600 28px Outfit, sans-serif';
+    ctx.fillStyle = 'rgba(148, 163, 184, 0.9)';
+    ctx.shadowColor = 'rgba(148, 163, 184, 0.15)';
+    ctx.shadowBlur = 15;
+    ctx.fillText('CAN YOU SCORE THE WINNING PENALTY?', 960, 430);
 
     ctx.restore();
   }
