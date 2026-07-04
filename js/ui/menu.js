@@ -477,13 +477,29 @@ export class MainMenuScene extends Scene {
     ctx.fillText('STRIKER', 960, 315);
     ctx.restore();
 
-    // Tagline
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
-    ctx.shadowBlur = 6;
-    ctx.shadowOffsetY = 2;
-    ctx.font = '700 26px Outfit, sans-serif';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText('CAN YOU SCORE THE WINNING PENALTY?', 960, 415);
+    // Tagline - delayed entrance
+    const tagProgress = Math.min(1, Math.max(0, (this.entranceTimer - 0.3) / (this.entranceDuration - 0.3)));
+    const tagEase = 1 - Math.pow(1 - tagProgress, 3);
+    if (tagEase > 0) {
+      ctx.save();
+      ctx.globalAlpha = tagEase;
+      const tagY = 400;
+      const tagW = 640;
+      const tagH = 44;
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      ctx.beginPath();
+      drawRoundRect(ctx, 960 - tagW / 2, tagY - tagH / 2, tagW, tagH, 22);
+      ctx.fill();
+      ctx.shadowColor = 'rgba(16, 185, 129, 0.5)';
+      ctx.shadowBlur = 30;
+      ctx.shadowOffsetY = 2;
+      ctx.font = '800 28px Outfit, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('CAN YOU SCORE THE WINNING PENALTY?', 960, tagY + 1);
+      ctx.restore();
+    }
 
     ctx.restore();
   }
