@@ -2,9 +2,6 @@ import { Scene } from '../game.js';
 import { COLORS } from '../config.js';
 import { drawRoundRect, drawGlowingText } from '../utils/helpers.js';
 
-let ballSvgUrl = 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2246%22%20fill%3D%22%2523ffffff%22%20stroke%3D%22%25230f172a%22%20stroke-width%3D%224%22%2F%3E%3Cpath%20d%3D%22M50%2032%20L61%2040%20L57%2052%20L43%2052%20L39%2040%20Z%22%20fill%3D%22%25231e293b%22%20stroke%3D%22%25230f172a%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M50%202%20L50%2032%20M92%2026%20L61%2040%20M76%2080%20L57%2052%20M24%2080%20L43%2052%20M8%2026%20L39%2040%22%20stroke%3D%22%25230f172a%22%20stroke-width%3D%223%22%2F%3E%3C%2Fsvg%3E';
-let gloveSvgUrl = 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20x%3D%2225%22%20y%3D%2235%22%20width%3D%2250%22%20height%3D%2245%22%20rx%3D%2212%22%20fill%3D%22%25230ea5e9%22%20stroke%3D%22%2523ffffff%22%20stroke-width%3D%223%22%2F%3E%3Cpath%20d%3D%22M30%2035%20V15%20M42%2035%20V10%20M54%2035%20V10%20M66%2035%20V15%20M75%2045%20L88%2030%22%20stroke%3D%22%2523ffffff%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E';
-
 export class LoadingScene extends Scene {
   constructor(game) {
     super(game);
@@ -18,8 +15,9 @@ export class LoadingScene extends Scene {
     this.progress = 0;
     this.targetProgress = 0;
 
-    this.game.loader.queueImage('ball', ballSvgUrl);
-    this.game.loader.queueImage('glove', gloveSvgUrl);
+    this.game.loader.queueImage('ball', 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2246%22%20fill%3D%22%2523ffffff%22%20stroke%3D%22%25230f172a%22%20stroke-width%3D%224%22%2F%3E%3Cpath%20d%3D%22M50%2032%20L61%2040%20L57%2052%20L43%2052%20L39%2040%20Z%22%20fill%3D%22%25231e293b%22%20stroke%3D%22%25230f172a%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M50%202%20L50%2032%20M92%2026%20L61%2040%20M76%2080%20L57%2052%20M24%2080%20L43%2052%20M8%2026%20L39%2040%22%20stroke%3D%22%25230f172a%22%20stroke-width%3D%223%22%2F%3E%3C%2Fsvg%3E');
+    this.game.loader.queueImage('glove', 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20x%3D%2225%22%20y%3D%2235%22%20width%3D%2250%22%20height%3D%2245%22%20rx%3D%2212%22%20fill%3D%22%25230ea5e9%22%20stroke%3D%22%2523ffffff%22%20stroke-width%3D%223%22%2F%3E%3Cpath%20d%3D%22M30%2035%20V15%20M42%2035%20V10%20M54%2035%20V10%20M66%2035%20V15%20M75%2045%20L88%2030%22%20stroke%3D%22%2523ffffff%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E');
+    this.game.loader.queueImage('buttons', 'assets/ui/buttons.png');
 
     this.game.loader.loadAsync((pct) => {
       this.targetProgress = pct;
@@ -112,11 +110,8 @@ export class MainMenuScene extends Scene {
   constructor(game) {
     super(game);
 
-    this.buttons = [
-      { x: 960, y: 600, w: 380, h: 80, label: 'PLAY', key: 'play', color: COLORS.green, hoverColor: '#059669' },
-      { x: 960, y: 710, w: 380, h: 80, label: 'SETTINGS', key: 'settings', color: COLORS.blue, hoverColor: '#0284c7' },
-      { x: 960, y: 820, w: 380, h: 80, label: 'HOW TO PLAY', key: 'howtoplay', color: COLORS.purple, hoverColor: '#6d28d9' },
-    ];
+    this.overlay = document.getElementById('menu-overlay');
+    this.clickHandler = null;
 
     this.footballs = [];
     for (let i = 0; i < 6; i++) {
@@ -153,6 +148,28 @@ export class MainMenuScene extends Scene {
 
   enter() {
     this.entranceTimer = 0;
+    if (this.overlay) {
+      this.overlay.classList.remove('hidden');
+
+      this.clickHandler = (e) => {
+        const btn = e.target.closest('[data-scene]');
+        if (!btn) return;
+        const sceneName = btn.dataset.scene;
+        this.game.soundManager.playSound('click');
+        this.game.sceneManager.switchTo(sceneName);
+      };
+      this.overlay.addEventListener('click', this.clickHandler);
+    }
+  }
+
+  exit() {
+    if (this.overlay) {
+      this.overlay.classList.add('hidden');
+      if (this.clickHandler) {
+        this.overlay.removeEventListener('click', this.clickHandler);
+        this.clickHandler = null;
+      }
+    }
   }
 
   update(dt) {
@@ -161,7 +178,6 @@ export class MainMenuScene extends Scene {
     }
 
     const time = performance.now();
-    const p = this.game.inputManager.pointer;
 
     this.footballs.forEach(b => {
       b.x += b.speedX;
@@ -179,23 +195,8 @@ export class MainMenuScene extends Scene {
       s.alpha = Math.max(0.1, Math.min(0.9, s.alpha));
     });
 
-    this.buttons.forEach(btn => {
-      btn.hovered = Math.abs(p.x - btn.x) < btn.w / 2 && Math.abs(p.y - btn.y) < btn.h / 2;
-    });
-
-    if (p.isTapped) {
-      for (const btn of this.buttons) {
-        const isOver = Math.abs(p.x - btn.x) < btn.w / 2 && Math.abs(p.y - btn.y) < btn.h / 2;
-        if (isOver) {
-          this.game.soundManager.playSound('click');
-          switch (btn.key) {
-            case 'play': this.game.sceneManager.switchTo('Gameplay'); break;
-            case 'settings': this.game.sceneManager.switchTo('Settings'); break;
-            case 'howtoplay': this.game.sceneManager.switchTo('HowToPlay'); break;
-          }
-          break;
-        }
-      }
+    if (this.game.inputManager.isKeyJustPressed('Escape')) {
+      this.game.soundManager.playSound('click');
     }
   }
 
@@ -208,7 +209,6 @@ export class MainMenuScene extends Scene {
     this.renderPitch(ctx);
     this.renderFootballParticles(ctx);
     this.renderTitle(ctx);
-    this.renderButtons(ctx);
     this.renderFooter(ctx);
   }
 
@@ -376,69 +376,18 @@ export class MainMenuScene extends Scene {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = COLORS.white;
-    ctx.fillText('PENALTY', 960, 260);
+    ctx.fillText('PENALTY', 960, 220);
 
     ctx.shadowColor = 'rgba(16, 185, 129, 0.5)';
     ctx.shadowBlur = 80;
     ctx.fillStyle = COLORS.green;
-    ctx.fillText('STRIKER', 960, 365);
+    ctx.fillText('STRIKER', 960, 325);
 
     ctx.shadowBlur = 0;
     ctx.font = '500 16px Space Grotesk, monospace';
     ctx.fillStyle = 'rgba(148, 163, 184, 0.8)';
-    ctx.fillText('CAN YOU SCORE THE WINNING PENALTY?', 960, 430);
+    ctx.fillText('CAN YOU SCORE THE WINNING PENALTY?', 960, 400);
 
-    ctx.restore();
-  }
-
-  renderButtons(ctx) {
-    const progress = Math.min(1, this.entranceTimer / this.entranceDuration);
-    this.buttons.forEach((btn, i) => {
-      const btnDelay = 0.3 + i * 0.15;
-      const btnProgress = Math.max(0, Math.min(1, (progress - btnDelay) / 0.3));
-      const btnEase = 1 - Math.pow(1 - btnProgress, 3);
-      this.drawButton(ctx, btn, btnEase);
-    });
-  }
-
-  drawButton(ctx, btn, ease) {
-    if (ease <= 0) return;
-    ctx.save();
-    ctx.globalAlpha = ease;
-
-    const hoverScale = btn.hovered ? 1.06 : 1;
-    ctx.translate(btn.x, btn.y);
-    ctx.scale(hoverScale, hoverScale);
-    ctx.translate(-btn.x, -btn.y);
-
-    ctx.shadowColor = btn.hovered ? btn.color : 'rgba(0,0,0,0.3)';
-    ctx.shadowBlur = btn.hovered ? 30 : 10;
-
-    const grad = ctx.createLinearGradient(btn.x - btn.w / 2, btn.y - btn.h / 2, btn.x - btn.w / 2, btn.y + btn.h / 2);
-    if (btn.hovered) {
-      grad.addColorStop(0, btn.color);
-      grad.addColorStop(1, btn.hoverColor);
-      ctx.fillStyle = grad;
-    } else {
-      grad.addColorStop(0, 'rgba(30, 41, 59, 0.8)');
-      grad.addColorStop(1, 'rgba(15, 23, 42, 0.9)');
-      ctx.fillStyle = grad;
-    }
-
-    ctx.beginPath();
-    drawRoundRect(ctx, btn.x - btn.w / 2, btn.y - btn.h / 2, btn.w, btn.h, 16);
-    ctx.fill();
-
-    ctx.strokeStyle = btn.hovered ? COLORS.white : COLORS.border;
-    ctx.lineWidth = btn.hovered ? 2.5 : 1.5;
-    ctx.stroke();
-
-    ctx.shadowBlur = 0;
-    ctx.font = '800 24px Outfit, sans-serif';
-    ctx.fillStyle = btn.hovered ? '#0b0f19' : '#f8fafc';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(btn.label, btn.x, btn.y);
     ctx.restore();
   }
 

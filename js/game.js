@@ -1,7 +1,9 @@
 import { CANVAS_WIDTH, CANVAS_HEIGHT, COLORS, PHYSICS } from './config.js';
 import { AssetLoader, SoundManager } from './systems/audio.js';
 import { InputManager } from './systems/input.js';
-import { drawRoundRect } from './utils/helpers.js';
+import { SaveManager } from './systems/save.js';
+import { GameModeManager } from './gamemodes/GameModeManager.js';
+import { drawRoundRect, drawGlowingText, renderBaseButton, isPointerOverButton } from './utils/helpers.js';
 import { Ball } from './gameplay/ball.js';
 import { renderHUD, renderPauseButton, createDefaultPauseBtn } from './ui/hud.js';
 
@@ -84,6 +86,7 @@ export class Game {
     this.soundManager = new SoundManager();
     this.inputManager = new InputManager(this.canvas);
     this.sceneManager = new SceneManager(this);
+    this.modeManager = new GameModeManager();
 
     this.lastTime = 0;
     this.fps = 0;
@@ -175,8 +178,18 @@ export class GameplayScene extends Scene {
     this.pauseBtn = createDefaultPauseBtn();
     this.ball = new Ball();
     this.ballRadius = PHYSICS.ballRadius;
-    this.stars = [];
+    this.mode = null;
+    this.modeConfig = null;
+    this.matchEnded = false;
+    this.matchEndTimer = 0;
+    this.swipePulse = 0;
+    this.goalsRequired = 0;
+    this.roundName = '';
+    this.roundIndex = 0;
+    this.totalRounds = 0;
+    this.showResult = false;
 
+    this.stars = [];
     for (let i = 0; i < 30; i++) {
       this.stars.push({
         x: Math.random() * 1920,
@@ -222,18 +235,72 @@ export class GameplayScene extends Scene {
         });
       }
     }
+
+    this.practiceResetBtn = { x: 960, y: 980, w: 180, h: 50, label: 'RESET', hovered: false };
   }
 
-  enter() {
+  enter(data) {
     this.ball.reset();
+
+    if (!data) {
+      if (this.mode) return;
+      data = { mode: 'quickplay', difficulty: 'normal', maxAttempts: 5 };
+    }
+
+    this.matchEnded = false;
+    this.matchEndTimer = 0;
+    this.showResult = false;
+    this.swipePulse = 0;
+
+    this.modeConfig = data;
+    this.mode = data.mode || 'quickplay';
+    this.goalsRequired = data.goalsRequired || 999;
+    this.roundName = data.roundName || '';
+    this.roundIndex = data.roundIndex || 0;
+    this.totalRounds = data.totalRounds || 0;
+
+    const difficulty = data.difficulty || 'normal';
+    const maxAttempts = data.maxAttempts !== undefined ? data.maxAttempts : 5;
+
+    this.shotsTaken = 0;
+    this.shotsScored = 0;
+    this.bestStreak = 0;
+    this.currentStreak = 0;
+    this.totalShotPower = 0;
+
+    if (this.mode === 'quickplay') {
+      this.modeInstance = this.game.modeManager.startQuickPlay({
+        difficulty,
+        matchLength: data.matchLength || 5,
+      });
+    } else if (this.mode === 'practice') {
+      this.modeInstance = this.game.modeManager.startPractice({
+        difficulty,
+        windEnabled: data.practiceOptions?.windEnabled || false,
+        shotTrailEnabled: data.practiceOptions?.shotTrailEnabled || false,
+        targetZonesEnabled: data.practiceOptions?.targetZonesEnabled || false,
+      });
+    } else {
+      this.modeInstance = null;
+    }
   }
 
   update(dt) {
     const p = this.game.inputManager.pointer;
+    this.swipePulse += 3.5 * dt;
 
     this.pauseBtn.hovered =
       Math.abs(p.x - this.pauseBtn.x) < this.pauseBtn.w / 2 &&
       Math.abs(p.y - this.pauseBtn.y) < this.pauseBtn.h / 2;
+
+    if (this.mode === 'practice') {
+      this.practiceResetBtn.hovered = isPointerOverButton(p, this.practiceResetBtn);
+    }
+
+    if (this.matchEnded) {
+      this.matchEndTimer += dt;
+      return;
+    }
 
     if (p.isTapped && this.pauseBtn.hovered) {
       this.game.soundManager.playSound('click');
@@ -241,19 +308,268 @@ export class GameplayScene extends Scene {
       return;
     }
 
+    if (this.mode === 'practice' && p.isTapped && this.practiceResetBtn.hovered) {
+      this.game.soundManager.playSound('click');
+      this.resetPractice();
+      return;
+    }
+
     if (this.game.inputManager.isKeyJustPressed('Escape')) {
       this.game.soundManager.playSound('click');
       this.game.sceneManager.switchTo('Pause', this);
+      return;
     }
+
+    if (p.swipe.active) {
+      this.processShot(p);
+    }
+  }
+
+  processShot(p) {
+    const isGoal = Math.abs(p.swipe.dx) < 250 && p.swipe.dy < -100;
+    const shotPower = Math.min(100, Math.abs(p.swipe.vy) / 5);
+
+    this.shotsTaken++;
+    this.totalShotPower += shotPower;
+
+    if (isGoal) {
+      this.shotsScored++;
+      this.currentStreak++;
+      if (this.currentStreak > this.bestStreak) {
+        this.bestStreak = this.currentStreak;
+      }
+      this.game.soundManager.playSound('goal');
+    } else {
+      this.currentStreak = 0;
+      this.game.soundManager.playSound('miss');
+    }
+
+    if (this.mode === 'practice') {
+      if (this.modeInstance) this.modeInstance.processShot(isGoal, shotPower);
+      this.handlePracticeShot();
+    } else if (this.mode === 'quickplay') {
+      this.handleQuickPlayShot();
+    } else if (this.mode === 'tournament') {
+      this.handleTournamentShot();
+    }
+  }
+
+  handleTournamentShot() {
+    const maxAttempts = 5;
+    if (this.shotsTaken >= maxAttempts) {
+      this.matchEnded = true;
+      this.matchEndTimer = 0;
+      const tm = this.game.modeManager.tournament;
+      const won = this.shotsScored >= this.goalsRequired;
+
+      tm.recordMatchResult({
+        score: this.shotsScored,
+        attempts: this.shotsTaken,
+        goalsRequired: this.goalsRequired,
+      });
+
+      setTimeout(() => {
+        const isChampion = tm.currentRound >= (tm.currentTournament?.rounds?.length || 0);
+        this.game.sceneManager.switchTo('TournamentResult', {
+          won,
+          stats: { score: this.shotsScored, attempts: this.shotsTaken },
+          roundName: this.roundName,
+          tournamentName: tm.currentTournament?.name || '',
+          isChampion,
+          goalsRequired: this.goalsRequired,
+          rewardCoins: tm.currentTournament?.rewardCoins || 0,
+          rewardXP: tm.currentTournament?.rewardXP || 0,
+        });
+      }, 600);
+    }
+  }
+
+  handleQuickPlayShot() {
+    const maxAttempts = this.modeConfig?.maxAttempts;
+    if (maxAttempts !== null && this.shotsTaken >= maxAttempts) {
+      this.matchEnded = true;
+      this.matchEndTimer = 0;
+
+      const coinsEarned = this.shotsScored * 10 + this.bestStreak * 5;
+      const accuracy = this.shotsTaken > 0 ? (this.shotsScored / this.shotsTaken) * 100 : 0;
+      const avgPower = this.shotsTaken > 0 ? this.totalShotPower / this.shotsTaken : 0;
+
+      const prevBest = SaveManager.load('penalty_quickplay_best', { score: 0, accuracy: 0 });
+      const isNewBest = this.shotsScored > prevBest.score;
+      if (isNewBest) {
+        SaveManager.save('penalty_quickplay_best', { score: this.shotsScored, accuracy: Math.round(accuracy) });
+      }
+
+      this.game.sceneManager.switchTo('QuickPlayResult', {
+        score: this.shotsScored,
+        attempts: this.shotsTaken,
+        accuracy: Math.round(accuracy),
+        bestStreak: this.bestStreak,
+        coinsEarned,
+        avgPower: Math.round(avgPower),
+        isNewBest,
+        difficulty: this.modeConfig?.difficulty || 'normal',
+      });
+    }
+  }
+
+  handlePracticeShot() {
+    this.ball.reset();
+  }
+
+  resetPractice() {
+    this.shotsTaken = 0;
+    this.shotsScored = 0;
+    this.bestStreak = 0;
+    this.currentStreak = 0;
+    this.totalShotPower = 0;
+    if (this.modeInstance) {
+      this.modeInstance.resetPractice();
+    }
+    this.ball.reset();
   }
 
   render(ctx) {
     this.renderStadiumBackground(ctx);
     this.renderStadiumField(ctx);
     this.renderGoalPost(ctx);
-    renderHUD(ctx, 0, 0, 1);
+
+    if (this.mode === 'practice') {
+      this.renderPracticeHUD(ctx);
+    } else {
+      const maxAttempts = this.modeConfig?.maxAttempts || 5;
+      renderHUD(ctx, this.shotsScored, maxAttempts, Math.max(1, this.currentStreak));
+    }
+
+    if (this.mode === 'tournament' && this.roundName) {
+      this.renderTournamentRoundInfo(ctx);
+    }
+
     this.renderBall(ctx);
     renderPauseButton(ctx, this.pauseBtn);
+
+    if (this.mode === 'practice') {
+      this.renderPracticeUI(ctx);
+    }
+
+    if (this.shotsTaken === 0) {
+      this.renderSwipeTutorial(ctx);
+    }
+  }
+
+  renderTournamentRoundInfo(ctx) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(139, 92, 246, 0.15)';
+    ctx.strokeStyle = COLORS.purple;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    drawRoundRect(ctx, 80, 40, 280, 80, 14);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 14px Space Grotesk, monospace';
+    ctx.fillStyle = COLORS.purple;
+    ctx.fillText('TOURNAMENT', 220, 64);
+
+    ctx.font = 'bold 20px Outfit, sans-serif';
+    ctx.fillStyle = COLORS.white;
+    ctx.fillText(this.roundName, 220, 98);
+
+    ctx.restore();
+  }
+
+  renderPracticeHUD(ctx) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+    ctx.strokeStyle = COLORS.border;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    drawRoundRect(ctx, 780, 40, 360, 110, 16);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 12px Space Grotesk, monospace';
+    ctx.fillStyle = COLORS.darkSlate;
+    ctx.fillText('PRACTICE', 960, 56);
+
+    ctx.font = 'bold 26px Outfit, sans-serif';
+    ctx.fillStyle = COLORS.white;
+    ctx.fillText(`${this.shotsScored} / ${this.shotsTaken}`, 960, 88);
+
+    const accuracy = this.shotsTaken > 0 ? Math.round((this.shotsScored / this.shotsTaken) * 100) : 0;
+    ctx.font = '600 14px Space Grotesk, monospace';
+    ctx.fillStyle = accuracy >= 70 ? COLORS.green : (accuracy >= 40 ? COLORS.gold : COLORS.red);
+    ctx.fillText(`${accuracy}% ACCURACY`, 960, 120);
+
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+    ctx.strokeStyle = COLORS.border;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    drawRoundRect(ctx, 80, 40, 260, 110, 14);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.font = '500 13px Space Grotesk, monospace';
+    ctx.fillStyle = COLORS.slate;
+    ctx.fillText(`Shots: ${this.shotsTaken}`, 100, 62);
+    ctx.fillText(`Goals: ${this.shotsScored}`, 100, 82);
+    ctx.fillText(`Misses: ${this.shotsTaken - this.shotsScored}`, 100, 102);
+    ctx.fillText(`Best Streak: ${this.bestStreak}`, 100, 122);
+
+    ctx.restore();
+  }
+
+  renderPracticeUI(ctx) {
+    ctx.save();
+    const isHover = this.practiceResetBtn.hovered;
+    ctx.shadowColor = isHover ? COLORS.purpleGlow : 'rgba(0,0,0,0.2)';
+    ctx.shadowBlur = isHover ? 20 : 5;
+    ctx.fillStyle = isHover ? COLORS.purple : 'rgba(30, 41, 59, 0.7)';
+    ctx.strokeStyle = isHover ? '#ffffff' : COLORS.border;
+    ctx.lineWidth = isHover ? 2 : 1;
+    ctx.beginPath();
+    drawRoundRect(ctx, this.practiceResetBtn.x - this.practiceResetBtn.w / 2,
+      this.practiceResetBtn.y - this.practiceResetBtn.h / 2,
+      this.practiceResetBtn.w, this.practiceResetBtn.h, 12);
+    ctx.fill();
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.font = 'bold 16px Outfit, sans-serif';
+    ctx.fillStyle = isHover ? '#0b0f19' : COLORS.white;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(this.practiceResetBtn.label, this.practiceResetBtn.x, this.practiceResetBtn.y);
+    ctx.restore();
+  }
+
+  renderSwipeTutorial(ctx) {
+    ctx.save();
+    const yOffset = Math.sin(this.swipePulse) * 30;
+    ctx.strokeStyle = 'rgba(16, 185, 129, 0.8)';
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = 'rgba(16, 185, 129, 0.4)';
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.moveTo(960, 750 + yOffset);
+    ctx.lineTo(960, 680 + yOffset);
+    ctx.lineTo(945, 695 + yOffset);
+    ctx.moveTo(960, 680 + yOffset);
+    ctx.lineTo(975, 695 + yOffset);
+    ctx.stroke();
+    drawGlowingText(ctx, 'FLICK OR DRAG BALL UPWARDS TO SHOOT', 960, 960,
+      'bold 16px Space Grotesk, monospace', COLORS.white, 'rgba(0,0,0,0.5)', 8);
+    ctx.restore();
   }
 
   renderStadiumBackground(ctx) {
@@ -602,7 +918,7 @@ export class GameplayScene extends Scene {
   renderBall(ctx) {
     const bx = this.ball.x;
     const by = this.ball.y;
-    const r = this.ballRadius;
+    const r = this.ball.radius;
 
     ctx.save();
 

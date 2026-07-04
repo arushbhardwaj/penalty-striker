@@ -501,6 +501,12 @@ function drawGlowingText(ctx, text, x, y, font, color, glowColor, glowRadius = 1
 /**
  * LoadingScene - Preloads assets and simulates engine initialization with details.
  */
+const BUTTON_SRC = [
+    { sx: 0, sy: 60, sw: 1536, sh: 295 },
+    { sx: 0, sy: 370, sw: 1536, sh: 300 },
+    { sx: 0, sy: 680, sw: 1536, sh: 280 },
+];
+
 class LoadingScene extends Scene {
     constructor(game) {
         super(game);
@@ -517,6 +523,7 @@ class LoadingScene extends Scene {
         // Enqueue high quality inline SVG placeholders to verify asset loading
         this.game.loader.queueImage('ball', 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2246%22%20fill%3D%22%2523ffffff%22%20stroke%3D%22%25230f172a%22%20stroke-width%3D%224%22%2F%3E%3Cpath%20d%3D%22M50%2032%20L61%2040%20L57%2052%20L43%2052%20L39%2040%20Z%22%20fill%3D%22%25231e293b%22%20stroke%3D%22%25230f172a%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M50%202%20L50%2032%20M92%2026%20L61%2040%20M76%2080%20L57%2052%20M24%2080%20L43%2052%20M8%2026%20L39%2040%22%20stroke%3D%22%25230f172a%22%20stroke-width%3D%223%22%2F%3E%3C%2Fsvg%3E');
         this.game.loader.queueImage('glove', 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20x%3D%2225%22%20y%3D%2235%22%20width%3D%2250%22%20height%3D%2245%22%20rx%3D%2212%22%20fill%3D%22%25230ea5e9%22%20stroke%3D%22%2523ffffff%22%20stroke-width%3D%223%22%2F%3E%3Cpath%20d%3D%22M30%2035%20V15%20M42%2035%20V10%20M54%2035%20V10%20M66%2035%20V15%20M75%2045%20L88%2030%22%20stroke%3D%22%2523ffffff%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E');
+        this.game.loader.queueImage('buttons', 'assets/ui/buttons.png');
 
         // Start asset loader with Promise-based async loading
         this.game.loader.loadAsync((pct) => {
@@ -623,9 +630,9 @@ class MainMenuScene extends Scene {
         super(game);
 
         this.buttons = [
-            { x: 960, y: 600, w: 380, h: 80, label: "PLAY", key: 'play', color: '#10b981', hoverColor: '#059669' },
-            { x: 960, y: 710, w: 380, h: 80, label: "SETTINGS", key: 'settings', color: '#0ea5e9', hoverColor: '#0284c7' },
-            { x: 960, y: 820, w: 380, h: 80, label: "HOW TO PLAY", key: 'howtoplay', color: '#8b5cf6', hoverColor: '#6d28d9' },
+            { x: 960, y: 600, w: 380, h: 80, label: "PLAY", key: 'play', srcIdx: 0, color: '#10b981' },
+            { x: 960, y: 710, w: 380, h: 80, label: "SETTINGS", key: 'settings', srcIdx: 1, color: '#ef4444' },
+            { x: 960, y: 820, w: 380, h: 80, label: "HOW TO PLAY", key: 'howtoplay', srcIdx: 2, color: '#f59e0b' },
         ];
 
         this.footballs = [];
@@ -910,15 +917,16 @@ class MainMenuScene extends Scene {
 
     renderButtons(ctx) {
         const progress = Math.min(1, this.entranceTimer / this.entranceDuration);
+        const buttonsImg = this.game.loader.getImage('buttons');
         this.buttons.forEach((btn, i) => {
             const btnDelay = 0.3 + i * 0.15;
             const btnProgress = Math.max(0, Math.min(1, (progress - btnDelay) / 0.3));
             const btnEase = 1 - Math.pow(1 - btnProgress, 3);
-            this.drawButton(ctx, btn, btnEase);
+            this.drawButton(ctx, btn, btnEase, buttonsImg);
         });
     }
 
-    drawButton(ctx, btn, ease) {
+    drawButton(ctx, btn, ease, img) {
         if (ease <= 0) return;
         ctx.save();
         ctx.globalAlpha = ease;
@@ -931,24 +939,23 @@ class MainMenuScene extends Scene {
         ctx.shadowColor = btn.hovered ? btn.color : 'rgba(0,0,0,0.3)';
         ctx.shadowBlur = btn.hovered ? 30 : 10;
 
-        const grad = ctx.createLinearGradient(btn.x - btn.w / 2, btn.y - btn.h / 2, btn.x - btn.w / 2, btn.y + btn.h / 2);
-        if (btn.hovered) {
-            grad.addColorStop(0, btn.color);
-            grad.addColorStop(1, btn.hoverColor);
-            ctx.fillStyle = grad;
+        if (img) {
+            const src = BUTTON_SRC[btn.srcIdx];
+            ctx.drawImage(img, src.sx, src.sy, src.sw, src.sh,
+                btn.x - btn.w / 2, btn.y - btn.h / 2, btn.w, btn.h);
         } else {
-            grad.addColorStop(0, 'rgba(30, 41, 59, 0.8)');
-            grad.addColorStop(1, 'rgba(15, 23, 42, 0.9)');
+            const grad = ctx.createLinearGradient(btn.x - btn.w / 2, btn.y - btn.h / 2, btn.x - btn.w / 2, btn.y + btn.h / 2);
+            grad.addColorStop(0, btn.hovered ? btn.color : 'rgba(30, 41, 59, 0.8)');
+            grad.addColorStop(1, btn.hovered ? btn.color : 'rgba(15, 23, 42, 0.9)');
             ctx.fillStyle = grad;
+            ctx.beginPath();
+            drawRoundRect(ctx, btn.x - btn.w / 2, btn.y - btn.h / 2, btn.w, btn.h, 16);
+            ctx.fill();
+
+            ctx.strokeStyle = btn.hovered ? '#ffffff' : 'rgba(255,255,255,0.08)';
+            ctx.lineWidth = btn.hovered ? 2.5 : 1.5;
+            ctx.stroke();
         }
-
-        ctx.beginPath();
-        drawRoundRect(ctx, btn.x - btn.w / 2, btn.y - btn.h / 2, btn.w, btn.h, 16);
-        ctx.fill();
-
-        ctx.strokeStyle = btn.hovered ? '#ffffff' : 'rgba(255,255,255,0.08)';
-        ctx.lineWidth = btn.hovered ? 2.5 : 1.5;
-        ctx.stroke();
 
         ctx.shadowBlur = 0;
         ctx.font = '800 24px Outfit, sans-serif';

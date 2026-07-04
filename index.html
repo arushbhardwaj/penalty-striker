@@ -17,30 +17,60 @@
         rel="stylesheet">
 
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="src/ui/button.css">
 </head>
 
 <body>
     <div id="screen-wrapper">
         <div id="game-container">
             <canvas id="game-canvas"></canvas>
-        </div>
 
-        <div id="orientation-overlay">
-            <div class="overlay-content">
-                <div class="phone-icon">
-                    <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-                        <line x1="12" y1="18" x2="12.01" y2="18"></line>
-                    </svg>
+            <div id="menu-overlay" class="menu-overlay hidden" aria-hidden="true">
+                <div class="menu-buttons">
+                    <button class="game-btn game-btn--green" data-scene="TournamentMenu">
+                        <span class="btn-text">TOURNAMENT</span>
+                    </button>
+                    <button class="game-btn game-btn--red" data-scene="QuickPlaySetup">
+                        <span class="btn-text">QUICK PLAY</span>
+                    </button>
+                    <button class="game-btn game-btn--yellow" data-scene="PracticeSetup">
+                        <span class="btn-text">PRACTICE</span>
+                    </button>
                 </div>
-                <h2>Rotate Your Device</h2>
-                <p>Please turn your device to landscape mode to play <strong>Penalty Striker</strong>.</p>
+
+                <button class="circle-btn circle-btn--settings" data-scene="Settings" aria-label="Settings">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                </button>
+
+                <button class="circle-btn circle-btn--help" data-scene="HowToPlay" aria-label="How to Play">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div id="orientation-overlay">
+                <div class="overlay-content">
+                    <div class="phone-icon">
+                        <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                        </svg>
+                    </div>
+                    <h2>Rotate Your Device</h2>
+                    <p>Please turn your device to landscape mode to play <strong>Penalty Striker</strong>.</p>
+                </div>
             </div>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script type="module" src="js/main.js"></script>
 </body>
 
 </html>

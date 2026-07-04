@@ -256,3 +256,128 @@ export class HowToPlayScene extends Scene {
     renderBaseButton(ctx, this.backBtn, COLORS.purple);
   }
 }
+
+function renderConfetti(ctx) {
+  ctx.save();
+  const time = performance.now() * 0.001;
+  const colors = ['#10b981', '#f59e0b', '#8b5cf6', '#0ea5e9', '#ef4444', '#ec4899'];
+  for (let i = 0; i < 40; i++) {
+    const x = (Math.sin(time + i * 2.1) * 0.5 + 0.5) * 1920;
+    const y = ((Math.sin(time * 1.4 + i * 2.7) * 0.5 + 0.5) * 500) + 80;
+    const size = 5 + Math.sin(i) * 2;
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.globalAlpha = 0.6 + Math.sin(time * 2.5 + i) * 0.3;
+    ctx.fillRect(x, y, size, size * 0.5);
+  }
+  ctx.restore();
+}
+
+export class QuickPlayResultScene extends Scene {
+  constructor(game) {
+    super(game);
+    this.replayBtn = { x: 960, y: 750, w: 320, h: 64, label: 'PLAY AGAIN', hovered: false };
+    this.menuBtn = { x: 960, y: 840, w: 320, h: 64, label: 'MAIN MENU', hovered: false };
+    this.result = null;
+    this.entranceTimer = 0;
+  }
+
+  enter(data) {
+    this.result = data || { score: 0, attempts: 0, accuracy: 0, bestStreak: 0, coinsEarned: 0, avgPower: 0, isNewBest: false, difficulty: 'normal' };
+    this.entranceTimer = 0;
+  }
+
+  update(dt) {
+    this.entranceTimer = Math.min(this.entranceTimer + dt, 1);
+    const p = this.game.inputManager.pointer;
+
+    this.replayBtn.hovered =
+      Math.abs(p.x - this.replayBtn.x) < this.replayBtn.w / 2 &&
+      Math.abs(p.y - this.replayBtn.y) < this.replayBtn.h / 2;
+
+    this.menuBtn.hovered =
+      Math.abs(p.x - this.menuBtn.x) < this.menuBtn.w / 2 &&
+      Math.abs(p.y - this.menuBtn.y) < this.menuBtn.h / 2;
+
+    if (p.isTapped) {
+      if (this.replayBtn.hovered) {
+        this.game.soundManager.playSound('click');
+        this.game.sceneManager.switchTo('QuickPlaySetup');
+      } else if (this.menuBtn.hovered) {
+        this.game.soundManager.playSound('click');
+        this.game.sceneManager.switchTo('MainMenu');
+      }
+    }
+  }
+
+  render(ctx) {
+    ctx.fillStyle = '#05070a';
+    ctx.fillRect(0, 0, 1920, 1080);
+
+    const progress = Math.min(1, this.entranceTimer / 0.8);
+
+    const glowColor = this.result.isNewBest ? 'rgba(245, 158, 11, 0.08)' : 'rgba(16, 185, 129, 0.06)';
+    const ambientGlow = ctx.createRadialGradient(960, 540, 10, 960, 540, 500);
+    ambientGlow.addColorStop(0, glowColor);
+    ambientGlow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = ambientGlow;
+    ctx.fillRect(0, 0, 1920, 1080);
+
+    if (this.result.isNewBest) {
+      renderConfetti(ctx);
+    }
+
+    ctx.save();
+    ctx.globalAlpha = progress;
+
+    ctx.fillStyle = 'rgba(17, 24, 39, 0.85)';
+    ctx.strokeStyle = this.result.isNewBest ? COLORS.gold : COLORS.green;
+    ctx.lineWidth = this.result.isNewBest ? 3 : 2;
+    ctx.beginPath();
+    drawRoundRect(ctx, 700, 180, 520, 520, 24);
+    ctx.fill();
+    ctx.stroke();
+
+    if (this.result.isNewBest) {
+      drawGlowingText(ctx, 'NEW BEST!', 960, 230,
+        '900 38px Outfit, sans-serif', COLORS.gold, 'rgba(245, 158, 11, 0.3)', 15);
+    } else {
+      drawGlowingText(ctx, 'MATCH COMPLETE', 960, 230,
+        '900 38px Outfit, sans-serif', COLORS.white, 'rgba(255, 255, 255, 0.1)', 10);
+    }
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 52px Outfit, sans-serif';
+    ctx.fillStyle = COLORS.white;
+    ctx.fillText(`${this.result.score} / ${this.result.attempts}`, 960, 310);
+
+    ctx.font = '500 16px Space Grotesk, monospace';
+    ctx.fillStyle = COLORS.slate;
+    ctx.fillText('GOALS', 960, 340);
+
+    ctx.textAlign = 'left';
+    ctx.font = '500 18px Space Grotesk, monospace';
+    ctx.fillStyle = COLORS.slate;
+    const statsY = 400;
+    ctx.fillText('Accuracy', 750, statsY);
+    ctx.fillText('Best Streak', 750, statsY + 45);
+    ctx.fillText('Avg Power', 750, statsY + 90);
+    ctx.fillText('Coins Earned', 750, statsY + 135);
+
+    ctx.textAlign = 'right';
+    ctx.font = 'bold 20px Outfit, sans-serif';
+    ctx.fillStyle = COLORS.white;
+    ctx.fillText(`${this.result.accuracy}%`, 1170, statsY);
+    ctx.fillText(`${this.result.bestStreak}`, 1170, statsY + 45);
+    ctx.fillText(`${this.result.avgPower}%`, 1170, statsY + 90);
+    ctx.fillStyle = COLORS.gold;
+    ctx.fillText(`+${this.result.coinsEarned} 🪙`, 1170, statsY + 135);
+
+    ctx.restore();
+
+    renderBaseButton(ctx, this.replayBtn, COLORS.green);
+    renderBaseButton(ctx, this.menuBtn, '#475569');
+
+    ctx.restore();
+  }
+}

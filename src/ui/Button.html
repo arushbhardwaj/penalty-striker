@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Buttons — Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="button.css">
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      padding: 3rem 2rem;
+      background: radial-gradient(circle at center, #141c30 0%, #05070c 100%);
+      font-family: 'Outfit', sans-serif;
+    }
+    .row {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+      max-width: 520px;
+    }
+    .row-label {
+      color: rgba(148,163,184,0.5);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Normal state -->
+  <div class="row">
+    <span class="row-label">Normal</span>
+    <button class="game-btn game-btn--green"><span class="btn-text">TOURNAMENT</span></button>
+    <button class="game-btn game-btn--red"><span class="btn-text">QUICK PLAY</span></button>
+    <button class="game-btn game-btn--yellow"><span class="btn-text">PRACTICE</span></button>
+  </div>
+
+  <!-- Disabled state -->
+  <div class="row">
+    <span class="row-label">Disabled</span>
+    <button class="game-btn game-btn--green" disabled><span class="btn-text">TOURNAMENT</span></button>
+    <button class="game-btn game-btn--red" disabled><span class="btn-text">QUICK PLAY</span></button>
+    <button class="game-btn game-btn--yellow" disabled><span class="btn-text">PRACTICE</span></button>
+  </div>
+
+</body>
+</html>

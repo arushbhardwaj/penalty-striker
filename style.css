@@ -162,6 +162,119 @@ html, body {
     }
 }
 
+/* -------------------------------------------------------------
+ * Menu Overlay - HTML buttons on top of canvas
+ * ------------------------------------------------------------- */
+.menu-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu-overlay:not(.hidden) {
+    pointer-events: auto;
+}
+
+.menu-overlay.hidden {
+    display: none;
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2vh;
+    width: 100%;
+    max-width: 340px;
+    margin-top: 5vh;
+}
+
+.menu-buttons .game-btn {
+    font-size: clamp(0.85rem, 1.4vw, 1.3rem);
+    min-height: 3.5em;
+    max-width: 100%;
+    width: 100%;
+    opacity: 0;
+    transform: translateY(24px);
+    animation: menuBtnFadeIn 0.5s ease forwards;
+}
+
+.menu-buttons .game-btn:nth-child(1) { animation-delay: 0.20s; }
+.menu-buttons .game-btn:nth-child(2) { animation-delay: 0.32s; }
+.menu-buttons .game-btn:nth-child(3) { animation-delay: 0.44s; }
+
+@keyframes menuBtnFadeIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* -------------------------------------------------------------
+ * Circular Buttons (Settings & How to Play)
+ * ------------------------------------------------------------- */
+.circle-btn {
+    position: absolute;
+    bottom: 3.5%;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #94a3b8;
+    transition: all 0.25s ease;
+    padding: 0;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    z-index: 11;
+    opacity: 0;
+    animation: circleFadeIn 0.5s ease 0.6s forwards;
+}
+
+.circle-btn:hover {
+    background: rgba(30, 41, 59, 0.9);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    transform: scale(1.12);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+.circle-btn:active {
+    transform: scale(0.95);
+}
+
+.circle-btn svg {
+    width: 22px;
+    height: 22px;
+}
+
+.circle-btn--settings {
+    right: 3.5%;
+}
+
+.circle-btn--help {
+    right: calc(3.5% + 60px);
+}
+
+@keyframes circleFadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
 /* Aspect Ratio / Orientation Trigger */
 /* If layout has aspect-ratio narrower than 1:1 (portrait screens, tall windows) */
 @media (max-aspect-ratio: 1/1) {
