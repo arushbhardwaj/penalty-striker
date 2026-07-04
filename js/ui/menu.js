@@ -1,6 +1,7 @@
 import { Scene } from '../game.js';
 import { COLORS } from '../config.js';
 import { drawRoundRect, drawGlowingText } from '../utils/helpers.js';
+import { MenuButton } from './MenuButton.js';
 
 export class LoadingScene extends Scene {
   constructor(game) {
@@ -111,7 +112,9 @@ export class MainMenuScene extends Scene {
     super(game);
 
     this.overlay = document.getElementById('menu-overlay');
+    this.buttonsContainer = document.getElementById('menu-buttons-container');
     this.clickHandler = null;
+    this.menuButtons = [];
 
     this.footballs = [];
     for (let i = 0; i < 6; i++) {
@@ -151,9 +154,12 @@ export class MainMenuScene extends Scene {
     if (this.overlay) {
       this.overlay.classList.remove('hidden');
 
+      this._createMenuButtons();
+
       this.clickHandler = (e) => {
         const btn = e.target.closest('[data-scene]');
         if (!btn) return;
+        if (btn.classList.contains('game-btn')) return;
         const sceneName = btn.dataset.scene;
         this.game.soundManager.playSound('click');
         this.game.sceneManager.switchTo(sceneName);
@@ -170,6 +176,47 @@ export class MainMenuScene extends Scene {
         this.clickHandler = null;
       }
     }
+    this._destroyMenuButtons();
+  }
+
+  _createMenuButtons() {
+    this._destroyMenuButtons();
+    const container = this.buttonsContainer;
+    if (!container) return;
+
+    const makeHandler = (sceneName) => () => {
+      this.game.soundManager.playSound('click');
+      this.game.sceneManager.switchTo(sceneName);
+    };
+
+    this.menuButtons = [
+      MenuButton.create(container, {
+        label: 'QUICK PLAY',
+        theme: 'red',
+        sceneName: 'QuickPlaySetup',
+        onClick: makeHandler('QuickPlaySetup'),
+        entranceDelay: '0.20s',
+      }),
+      MenuButton.create(container, {
+        label: 'TOURNAMENT',
+        theme: 'green',
+        sceneName: 'TournamentMenu',
+        onClick: makeHandler('TournamentMenu'),
+        entranceDelay: '0.32s',
+      }),
+      MenuButton.create(container, {
+        label: 'PRACTICE',
+        theme: 'yellow',
+        sceneName: 'PracticeSetup',
+        onClick: makeHandler('PracticeSetup'),
+        entranceDelay: '0.44s',
+      }),
+    ];
+  }
+
+  _destroyMenuButtons() {
+    this.menuButtons.forEach(btn => btn.destroy());
+    this.menuButtons = [];
   }
 
   update(dt) {

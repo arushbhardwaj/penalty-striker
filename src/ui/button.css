@@ -46,7 +46,8 @@
   /* em-based dimensions scale with font-size */
   --b-depth:   0.5em;
   --b-outline: 0.04em;
-  --b-radius:  0.3em;
+  --b-radius:  0.35em;
+  --btn-transition: 120ms;
 
   position: relative;
   display: inline-flex;
@@ -78,19 +79,21 @@
   background: linear-gradient(to bottom, var(--btn-body-top) 0%, var(--btn-body-bot) 100%);
 
   /* ── shadows (layered bottom-to-top) ──
-       1. bottom edge outline
-       2. depth fill
-       3. separator line (inset at bottom) */
+       1. external soft shadow
+       2. bottom edge outline
+       3. depth fill
+       4. separator line (inset at bottom) */
   box-shadow:
+    0 0.5em 1.2em -0.3em rgba(0, 0, 0, 0.5),
     0 calc(var(--b-depth) + var(--b-outline)) 0 0 var(--btn-outline),
     0 var(--b-depth) 0 0 var(--btn-depth-fill),
     inset 0 calc(-1 * var(--b-outline)) 0 0 var(--btn-separator);
 
   transform: translateY(0);
   transition:
-    transform 80ms ease,
-    box-shadow 80ms ease,
-    filter 120ms ease;
+    transform var(--btn-transition) ease,
+    box-shadow var(--btn-transition) ease,
+    filter var(--btn-transition) ease;
 }
 
 .game-btn::-moz-focus-inner {
@@ -133,16 +136,17 @@
    ═══════════════════════════════════════════ */
 
 .game-btn:hover:not(:disabled) {
-  transform: scale(1.03);
-  filter: brightness(1.08);
+  transform: scale(1.02);
+  filter: brightness(1.15);
   transition:
-    transform 120ms ease,
-    filter 120ms ease;
+    transform var(--btn-transition) ease,
+    filter var(--btn-transition) ease;
 }
 
 .game-btn:active:not(:disabled) {
-  transform: translateY(var(--b-depth)) scale(1.03);
+  transform: translateY(var(--b-depth)) scale(1.02);
   box-shadow:
+    0 0.3em 0.8em -0.2em rgba(0, 0, 0, 0.4),
     0 var(--b-outline) 0 0 var(--btn-outline),
     0 0 0 0 var(--btn-depth-fill),
     inset 0 0 0 0 transparent;
@@ -151,9 +155,22 @@
     box-shadow 80ms ease;
 }
 
+.game-btn:active:not(:disabled)::after {
+  content: '';
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  top: calc(-0.25em - var(--b-outline));
+  left: calc(-0.25em - var(--b-outline));
+  right: calc(-0.25em - var(--b-outline));
+  bottom: calc(-0.25em - var(--b-outline));
+  border: 0.12em solid rgba(255, 255, 255, 0.85);
+  border-radius: calc(var(--b-radius) + 0.25em);
+}
+
 .game-btn:focus-visible {
-  outline: 0.15em solid #60a5fa;
-  outline-offset: 0.2em;
+  outline: 0.12em solid rgba(255, 255, 255, 0.7);
+  outline-offset: 0.25em;
 }
 
 .game-btn:disabled {

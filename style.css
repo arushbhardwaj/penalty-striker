@@ -179,6 +179,11 @@ html, body {
 }
 
 .menu-overlay:not(.hidden) {
+    pointer-events: none;
+}
+
+.menu-overlay:not(.hidden) .circle-btn,
+.menu-overlay:not(.hidden) .game-btn {
     pointer-events: auto;
 }
 
@@ -190,31 +195,19 @@ html, body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.2vh;
-    width: 100%;
-    max-width: 340px;
-    margin-top: 5vh;
+    gap: clamp(10px, 1.5vh, 18px);
+    width: 90%;
+    max-width: 380px;
+    margin-top: min(8vh, 80px);
 }
 
 .menu-buttons .game-btn {
-    font-size: clamp(0.85rem, 1.4vw, 1.3rem);
+    font-size: clamp(0.9rem, 1.5vw, 1.35rem);
     min-height: 3.5em;
     max-width: 100%;
     width: 100%;
-    opacity: 0;
-    transform: translateY(24px);
-    animation: menuBtnFadeIn 0.5s ease forwards;
-}
-
-.menu-buttons .game-btn:nth-child(1) { animation-delay: 0.20s; }
-.menu-buttons .game-btn:nth-child(2) { animation-delay: 0.32s; }
-.menu-buttons .game-btn:nth-child(3) { animation-delay: 0.44s; }
-
-@keyframes menuBtnFadeIn {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    pointer-events: auto;
+    --b-radius: clamp(12px, 1.2vw, 18px);
 }
 
 /* -------------------------------------------------------------
