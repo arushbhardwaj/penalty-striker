@@ -39,7 +39,6 @@ export class QuickPlaySetupScene extends Scene {
       this._createTeamCards();
       this._createDifficultyButtons();
       this._createStartButton();
-      this._setupBackButton();
       this._updateUI();
     }
   }
@@ -52,7 +51,6 @@ export class QuickPlaySetupScene extends Scene {
     this._destroyTeamCards();
     this._destroyDifficultyButtons();
     this._destroyStartButton();
-    this._teardownBackButton();
   }
 
   update(dt) {
@@ -272,14 +270,37 @@ export class QuickPlaySetupScene extends Scene {
   _updateDifficultyButtons() {
     this.difficultyButtons.forEach(btn => {
       const value = btn.element.dataset.value;
-      if (value === this.selectedDifficulty) {
-        btn.element.style.setProperty('--btn-bg', '#3DD66C');
-        btn.element.style.setProperty('--btn-depth', '#2CAD54');
-        btn.element.style.setProperty('--btn-outline', '#004D1A');
-      } else {
+      const isSelected = value === this.selectedDifficulty;
+
+      btn.element.className = 'game-btn';
+      btn.element.classList.add(`game-btn--diff-${value}`);
+
+      if (!isSelected) {
+        btn.element.classList.remove(`game-btn--diff-${value}`);
         btn.element.style.setProperty('--btn-bg', 'rgba(30, 41, 59, 0.65)');
         btn.element.style.setProperty('--btn-depth', 'rgba(15, 23, 42, 0.9)');
         btn.element.style.setProperty('--btn-outline', 'rgba(100, 116, 139, 0.25)');
+        btn.element.classList.remove('game-btn--fire');
+      } else {
+        btn.element.classList.add(`game-btn--diff-${value}`);
+        if (value === 'easy') {
+          btn.element.style.setProperty('--btn-bg', 'var(--diff-easy-bg)');
+          btn.element.style.setProperty('--btn-depth', 'var(--diff-easy-depth)');
+          btn.element.style.setProperty('--btn-outline', 'var(--diff-easy-outline)');
+        } else if (value === 'normal') {
+          btn.element.style.setProperty('--btn-bg', 'var(--diff-normal-bg)');
+          btn.element.style.setProperty('--btn-depth', 'var(--diff-normal-depth)');
+          btn.element.style.setProperty('--btn-outline', 'var(--diff-normal-outline)');
+        } else if (value === 'hard') {
+          btn.element.style.setProperty('--btn-bg', 'var(--diff-hard-bg)');
+          btn.element.style.setProperty('--btn-depth', 'var(--diff-hard-depth)');
+          btn.element.style.setProperty('--btn-outline', 'var(--diff-hard-outline)');
+        } else if (value === 'legendary') {
+          btn.element.style.setProperty('--btn-bg', '#ff4500');
+          btn.element.style.setProperty('--btn-depth', '#cc3700');
+          btn.element.style.setProperty('--btn-outline', '#5c1a00');
+          btn.element.classList.add('game-btn--fire');
+        }
       }
     });
   }
@@ -287,6 +308,8 @@ export class QuickPlaySetupScene extends Scene {
   _createStartButton() {
     const container = document.getElementById('qp-start-section');
     container.innerHTML = '';
+
+    this._createBackButton(container);
 
     this.startButton = new MenuButton({
       label: '\u26BD START MATCH',
@@ -301,7 +324,47 @@ export class QuickPlaySetupScene extends Scene {
     this.startButton.setDisabled(true);
   }
 
+  _createBackButton(container) {
+    const backBtn = document.createElement('button');
+    backBtn.className = 'qp-back-door-btn';
+    backBtn.setAttribute('type', 'button');
+    backBtn.setAttribute('aria-label', 'Back to Main Menu');
+
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'btn-icon';
+    iconSpan.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    backBtn.appendChild(iconSpan);
+
+    const textSpan = document.createElement('span');
+    textSpan.className = 'btn-text';
+    textSpan.textContent = 'BACK';
+    backBtn.appendChild(textSpan);
+
+    this._backBtnHandler = () => {
+      this.game.soundManager.playSound('click');
+      this.game.sceneManager.switchTo('MainMenu');
+    };
+    backBtn.addEventListener('click', this._backBtnHandler);
+
+    container.prepend(backBtn);
+    this._backBtn = backBtn;
+  }
+
+  _destroyBackButton() {
+    if (this._backBtn) {
+      if (this._backBtnHandler) {
+        this._backBtn.removeEventListener('click', this._backBtnHandler);
+      }
+      if (this._backBtn.parentNode) {
+        this._backBtn.parentNode.removeChild(this._backBtn);
+      }
+      this._backBtn = null;
+      this._backBtnHandler = null;
+    }
+  }
+
   _destroyStartButton() {
+    this._destroyBackButton();
     if (this.startButton) {
       this.startButton.destroy();
       this.startButton = null;
@@ -330,9 +393,11 @@ export class QuickPlaySetupScene extends Scene {
     const homeFlag = document.getElementById('qp-home-flag');
     const homeFallback = document.getElementById('qp-home-flag-fallback');
     const homeName = document.getElementById('qp-home-name');
+    const homeRating = document.getElementById('qp-home-rating');
     const awayFlag = document.getElementById('qp-away-flag');
     const awayFallback = document.getElementById('qp-away-flag-fallback');
     const awayName = document.getElementById('qp-away-name');
+    const awayRating = document.getElementById('qp-away-rating');
 
     if (this.playerTeam) {
       homeFlag.src = `assets/flags/${this.playerTeam.flagCode}.png`;
@@ -340,11 +405,15 @@ export class QuickPlaySetupScene extends Scene {
       homeFlag.style.display = 'inline';
       homeFallback.style.display = 'none';
       homeName.textContent = this.playerTeam.name;
+      homeRating.textContent = `(${this.playerTeam.rating})`;
+      homeRating.style.display = 'inline';
     } else {
       homeFlag.src = '';
       homeFlag.style.display = 'none';
       homeFallback.style.display = 'none';
       homeName.textContent = 'Your Team: \u2014';
+      homeRating.textContent = '';
+      homeRating.style.display = 'none';
     }
 
     if (this.opponentTeam) {
@@ -353,11 +422,15 @@ export class QuickPlaySetupScene extends Scene {
       awayFlag.style.display = 'inline';
       awayFallback.style.display = 'none';
       awayName.textContent = this.opponentTeam.name;
+      awayRating.textContent = `(${this.opponentTeam.rating})`;
+      awayRating.style.display = 'inline';
     } else {
       awayFlag.src = '';
       awayFlag.style.display = 'none';
       awayFallback.style.display = 'none';
       awayName.textContent = 'Opponent: \u2014';
+      awayRating.textContent = '';
+      awayRating.style.display = 'none';
     }
   }
 
@@ -380,20 +453,4 @@ export class QuickPlaySetupScene extends Scene {
     }
   }
 
-  /* ── Back Button ── */
-
-  _setupBackButton() {
-    this._backHandler = () => {
-      this.game.soundManager.playSound('click');
-      this.game.sceneManager.switchTo('MainMenu');
-    };
-    const btn = document.getElementById('qp-back-btn');
-    if (btn) btn.addEventListener('click', this._backHandler);
-  }
-
-  _teardownBackButton() {
-    const btn = document.getElementById('qp-back-btn');
-    if (btn && this._backHandler) btn.removeEventListener('click', this._backHandler);
-    this._backHandler = null;
-  }
 }

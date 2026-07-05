@@ -314,42 +314,6 @@ html, body {
     pointer-events: auto;
 }
 
-/* Back Button */
-.qp-back-btn {
-    position: absolute;
-    top: 16px;
-    left: 20px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(15, 23, 42, 0.6);
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 8px 16px;
-    color: #94a3b8;
-    font: 600 16px 'Outfit', sans-serif;
-    cursor: pointer;
-    z-index: 5;
-    outline: none;
-    -webkit-tap-highlight-color: transparent;
-    transition: background 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
-}
-
-.qp-back-btn:hover {
-    background: rgba(30, 41, 59, 0.8);
-    color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.3);
-}
-
-.qp-back-btn:active {
-    transform: translateY(2px);
-}
-
-.qp-back-btn:focus-visible {
-    outline: 3px solid rgba(255, 255, 255, 0.7);
-    outline-offset: 4px;
-}
-
 /* Header */
 .qp-header {
     text-align: center;
@@ -358,17 +322,29 @@ html, body {
 }
 
 .qp-title {
-    font: 900 44px 'Outfit', sans-serif;
-    color: #ffffff;
-    text-shadow: 0 0 30px rgba(16, 185, 129, 0.3), 0 2px 4px rgba(0, 0, 0, 0.3);
+    font: 900 48px 'Outfit', sans-serif;
     margin: 0;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.02em;
+    text-align: center;
+    background: linear-gradient(180deg, #FFD700 0%, #FFB800 40%, #FF8C00 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.35)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    animation: titleGlow 3s ease-in-out infinite;
+}
+
+@keyframes titleGlow {
+    0%, 100% { filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.35)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)); }
+    50% { filter: drop-shadow(0 0 50px rgba(255, 215, 0, 0.55)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)); }
 }
 
 .qp-subtitle {
-    font: 500 18px 'Space Grotesk', monospace;
-    color: #94a3b8;
+    font: 700 20px 'Outfit', sans-serif;
+    color: #ffffff;
     margin: 2px 0 0;
+    text-shadow: 0 0 20px rgba(16, 185, 129, 0.4), 0 2px 4px rgba(0, 0, 0, 0.4);
+    letter-spacing: 0.04em;
 }
 
 /* Phase Indicator (Select Opponent) */
@@ -425,17 +401,22 @@ html, body {
     gap: 10px;
     padding: 10px 14px;
     border-radius: 14px;
-    border: 4px solid #c8ccd0;
+    border: 2px solid #000000;
     background: #f8fafc;
     cursor: pointer;
     user-select: none;
     outline: none;
     -webkit-tap-highlight-color: transparent;
     position: relative;
+    overflow: visible;
     min-height: 56px;
     box-shadow: 0 6px 0 0 #b0b4b8, 0 6px 14px -4px rgba(0, 0, 0, 0.2);
     transform: translateY(0);
-    transition: transform 100ms ease-out, box-shadow 100ms ease-out, background 150ms ease, border-color 150ms ease;
+    transition:
+      transform 80ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 80ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      background 150ms ease,
+      border-color 150ms ease;
 }
 
 .qp-team-card:hover {
@@ -495,10 +476,23 @@ html, body {
 }
 
 .qp-card-rating {
-    font: 700 13px 'Space Grotesk', monospace;
-    color: #f59e0b;
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f59e0b, #e67e22);
+    color: #ffffff;
+    font: 800 13px 'Space Grotesk', monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
     pointer-events: none;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.5), 0 0 0 3px rgba(255, 255, 255, 0.15);
+    z-index: 2;
+    line-height: 1;
 }
 
 /* Selected — Player (Green) */
@@ -570,16 +564,19 @@ html, body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
-    padding: 6px 0;
+    gap: 6px;
+    padding: 12px 20px;
     width: 100%;
-    max-width: 600px;
+    max-width: 780px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .qp-indicator-label {
-    font: 700 13px 'Space Grotesk', monospace;
+    font: 800 14px 'Space Grotesk', monospace;
     color: #94a3b8;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
 }
 
@@ -587,15 +584,16 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 20px;
+    gap: 24px;
     width: 100%;
 }
 
 .qp-team-slot {
     display: flex;
     align-items: center;
-    gap: 8px;
-    min-width: 100px;
+    gap: 10px;
+    min-width: 160px;
+    padding: 4px 0;
 }
 
 .qp-home-slot {
@@ -607,28 +605,36 @@ html, body {
 }
 
 .qp-slot-flag {
-    width: 24px;
-    height: 18px;
+    width: 32px;
+    height: 24px;
     object-fit: cover;
-    border-radius: 2px;
+    border-radius: 3px;
     vertical-align: middle;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 
 .qp-slot-flag-fallback {
-    font-size: 20px;
+    font-size: 28px;
     line-height: 1;
 }
 
 .qp-slot-name {
-    font: 700 16px 'Outfit', sans-serif;
-    color: #e2e8f0;
+    font: 800 20px 'Outfit', sans-serif;
+    color: #ffffff;
     white-space: nowrap;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+
+.qp-slot-rating {
+    font: 700 18px 'Space Grotesk', monospace;
+    color: #fbbf24;
+    text-shadow: 0 0 12px rgba(251, 191, 36, 0.4);
 }
 
 .qp-vs {
-    font: 800 18px 'Outfit', sans-serif;
+    font: 900 22px 'Outfit', sans-serif;
     color: #f59e0b;
-    text-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+    text-shadow: 0 0 20px rgba(245, 158, 11, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
     flex-shrink: 0;
 }
 
@@ -658,6 +664,12 @@ html, body {
     padding: 10px 18px;
     min-height: 44px;
     --b-radius: 14px;
+    transition:
+      transform 80ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 80ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      filter 180ms ease,
+      background 200ms ease,
+      border-color 200ms ease !important;
 }
 
 /* Start Button Section */
@@ -667,6 +679,75 @@ html, body {
     width: 100%;
     display: flex;
     justify-content: center;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.qp-start-section .game-btn {
+    flex: 0 1 auto;
+    min-width: 200px;
+}
+
+.qp-back-door-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: auto;
+    min-width: 120px;
+    padding: 12px 24px;
+    min-height: 50px;
+    border-radius: 16px;
+    border: 4px solid #4A0000;
+    background: #B54A4A;
+    cursor: pointer;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: 0 6px 0 0 #6A2A2A, 0 8px 20px -5px rgba(0, 0, 0, 0.35);
+    transform: translateY(0);
+    transition: transform 100ms ease-out, box-shadow 100ms ease-out, filter 100ms ease-out;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: clamp(0.9rem, 1.4vw, 1.2rem);
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    position: relative;
+    overflow: visible;
+}
+
+.qp-back-door-btn:hover {
+    transform: scale(1.03);
+    filter: brightness(1.12);
+    box-shadow: 0 6px 0 0 #6A2A2A, 0 10px 24px -6px rgba(0, 0, 0, 0.3);
+}
+
+.qp-back-door-btn:active {
+    transform: translateY(6px) scale(1.03);
+    box-shadow: 0 0 0 0 #6A2A2A, 0 2px 6px -3px rgba(0, 0, 0, 0.25);
+}
+
+.qp-back-door-btn .btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    pointer-events: none;
+}
+
+.qp-back-door-btn .btn-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    fill: currentColor;
+}
+
+.qp-back-door-btn .btn-text {
+    white-space: nowrap;
 }
 
 /* Aspect Ratio / Orientation Trigger */

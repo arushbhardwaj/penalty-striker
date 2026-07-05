@@ -1,11 +1,11 @@
 export const TEAMS = [
-  { id: 'argentina', name: 'Argentina', flag: '\u{1F1E6}\u{1F1F7}', flagCode: 'ar', rating: 92 },
+  { id: 'argentina', name: 'Argentina', flag: '\u{1F1E6}\u{1F1F7}', flagCode: 'ar', rating: 93 },
+  { id: 'portugal', name: 'Portugal', flag: '\u{1F1F5}\u{1F1F9}', flagCode: 'pt', rating: 93 },
   { id: 'france', name: 'France', flag: '\u{1F1EB}\u{1F1F7}', flagCode: 'fr', rating: 91 },
   { id: 'brazil', name: 'Brazil', flag: '\u{1F1E7}\u{1F1F7}', flagCode: 'br', rating: 90 },
   { id: 'england', name: 'England', flag: '\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}', flagCode: 'gb-eng', rating: 89 },
   { id: 'germany', name: 'Germany', flag: '\u{1F1E9}\u{1F1EA}', flagCode: 'de', rating: 88 },
   { id: 'spain', name: 'Spain', flag: '\u{1F1EA}\u{1F1F8}', flagCode: 'es', rating: 87 },
-  { id: 'portugal', name: 'Portugal', flag: '\u{1F1F5}\u{1F1F9}', flagCode: 'pt', rating: 86 },
   { id: 'netherlands', name: 'Netherlands', flag: '\u{1F1F3}\u{1F1F1}', flagCode: 'nl', rating: 85 },
   { id: 'italy', name: 'Italy', flag: '\u{1F1EE}\u{1F1F9}', flagCode: 'it', rating: 84 },
   { id: 'belgium', name: 'Belgium', flag: '\u{1F1E7}\u{1F1EA}', flagCode: 'be', rating: 83 },

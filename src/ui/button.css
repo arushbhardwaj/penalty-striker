@@ -18,6 +18,17 @@
   --btn-green-bg: #3DD66C;
   --btn-green-depth: #2CAD54;
   --btn-green-outline: #004D1A;
+
+  /* ── Difficulty colors ── */
+  --diff-easy-bg: #3DD66C;
+  --diff-easy-depth: #2CAD54;
+  --diff-easy-outline: #004D1A;
+  --diff-normal-bg: #FFE34D;
+  --diff-normal-depth: #CCB63A;
+  --diff-normal-outline: #5C4A00;
+  --diff-hard-bg: #FF5D5D;
+  --diff-hard-depth: #D93A3A;
+  --diff-hard-outline: #4A0000;
 }
 
 /* ═══════════════════════════════════════════
@@ -167,6 +178,78 @@
 .game-btn:focus-visible {
   outline: 3px solid rgba(255, 255, 255, 0.7);
   outline-offset: 6px;
+}
+
+/* ── Smooth click press animation ── */
+.game-btn:not(:disabled) {
+  transition:
+    transform 80ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 80ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    filter 80ms ease-out,
+    background 150ms ease,
+    border-color 150ms ease;
+}
+
+/* ── Fire effect for Legendary difficulty ── */
+.game-btn--fire {
+  --btn-bg: #ff4500;
+  --btn-depth: #cc3700;
+  --btn-outline: #5c1a00;
+  background: linear-gradient(135deg, #ff4500 0%, #ff6600 25%, #ff8c00 50%, #ff4500 75%, #cc3700 100%);
+  background-size: 300% 300%;
+  animation: fireDance 0.6s ease-in-out infinite alternate, fireGlow 1.2s ease-in-out infinite;
+  box-shadow:
+    0 var(--b-depth) 0 0 var(--btn-depth),
+    0 0 30px rgba(255, 69, 0, 0.5),
+    0 8px 20px -5px rgba(0, 0, 0, 0.35);
+}
+
+.game-btn--fire:hover:not(:disabled) {
+  box-shadow:
+    0 var(--b-depth) 0 0 var(--btn-depth),
+    0 0 50px rgba(255, 69, 0, 0.7),
+    0 10px 24px -6px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes fireDance {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+@keyframes fireGlow {
+  0%, 100% {
+    box-shadow:
+      0 var(--b-depth) 0 0 var(--btn-depth),
+      0 0 25px rgba(255, 69, 0, 0.4),
+      0 0 50px rgba(255, 140, 0, 0.2),
+      0 8px 20px -5px rgba(0, 0, 0, 0.35);
+  }
+  50% {
+    box-shadow:
+      0 var(--b-depth) 0 0 var(--btn-depth),
+      0 0 40px rgba(255, 69, 0, 0.6),
+      0 0 70px rgba(255, 140, 0, 0.3),
+      0 8px 20px -5px rgba(0, 0, 0, 0.35);
+  }
+}
+
+/* ── Difficulty button themes ── */
+.game-btn--diff-easy {
+  --btn-bg: var(--diff-easy-bg);
+  --btn-depth: var(--diff-easy-depth);
+  --btn-outline: var(--diff-easy-outline);
+}
+
+.game-btn--diff-normal {
+  --btn-bg: var(--diff-normal-bg);
+  --btn-depth: var(--diff-normal-depth);
+  --btn-outline: var(--diff-normal-outline);
+}
+
+.game-btn--diff-hard {
+  --btn-bg: var(--diff-hard-bg);
+  --btn-depth: var(--diff-hard-depth);
+  --btn-outline: var(--diff-hard-outline);
 }
 
 .game-btn:disabled {
