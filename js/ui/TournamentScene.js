@@ -2,24 +2,36 @@ import { Scene } from '../game.js';
 import { COLORS } from '../config.js';
 import { TEAMS } from '../data/teams.js';
 import { TOURNAMENT_DEFS } from '../data/tournaments.js';
-import { drawRoundRect, drawGlowingText, isPointerOverButton, renderBaseButton } from '../utils/helpers.js';
+import { drawRoundRect, drawGlowingText } from '../utils/helpers.js';
+
+const TOURNAMENT_THEMES = {
+  'fifa-world-cup': { bg: '#FFD700', depth: '#e6c200', outline: '#5c4a00' },
+  'uefa-champions-league': { bg: '#60CFFF', depth: '#38bfff', outline: '#004466' },
+  'uefa-euro': { bg: '#C084FC', depth: '#a855f7', outline: '#4a1d96' },
+  'copa-america': { bg: '#6EE7B7', depth: '#34d399', outline: '#065f46' },
+  'premier-league': { bg: '#FCA5A5', depth: '#f87171', outline: '#7f1d1d' },
+  'la-liga': { bg: '#FDA4AF', depth: '#fb7185', outline: '#831843' },
+};
 
 export class TournamentMenuScene extends Scene {
   constructor(game) {
     super(game);
-    this.cards = [];
-    this.entranceTimer = 0;
-    this.entranceDuration = 0.7;
     this.overlay = document.getElementById('tournament-menu-overlay');
+    this.grid = document.getElementById('tm-grid');
+    this.menuButtons = [];
     this._backHandler = null;
+    this.entranceTimer = 0;
   }
 
   enter() {
     this.entranceTimer = 0;
-    this.buildCards();
 
     if (this.overlay) {
       this.overlay.classList.remove('hidden');
+      this.overlay.getBoundingClientRect();
+      this.overlay.classList.add('active');
+      this._createButtons();
+
       const backBtn = document.getElementById('tm-back-btn');
       if (backBtn && !this._backHandler) {
         this._backHandler = () => {
@@ -33,158 +45,76 @@ export class TournamentMenuScene extends Scene {
 
   exit() {
     if (this.overlay) {
+      this.overlay.classList.remove('active');
       this.overlay.classList.add('hidden');
+    }
+    this._destroyButtons();
+    if (this._backHandler) {
       const backBtn = document.getElementById('tm-back-btn');
-      if (backBtn && this._backHandler) {
-        backBtn.removeEventListener('click', this._backHandler);
-        this._backHandler = null;
-      }
+      if (backBtn) backBtn.removeEventListener('click', this._backHandler);
+      this._backHandler = null;
     }
   }
 
-  buildCards() {
-    this.cards = TOURNAMENT_DEFS.map((t, i) => ({
-      ...t,
-      index: i,
-      hovered: false,
-      baseY: 240 + i * 125,
-    }));
+  _createButtons() {
+    this._destroyButtons();
+    if (!this.grid) return;
+
+    TOURNAMENT_DEFS.forEach((t, i) => {
+      const theme = TOURNAMENT_THEMES[t.id] || { bg: '#8b5cf6', depth: '#6d3ad1', outline: '#3b1f7a' };
+      const formatLabel = t.format === 'league' ? `${t.teams.length} teams • League` : `${t.teams.length} teams • Group + Knockout`;
+
+      const btn = document.createElement('button');
+      btn.className = 'game-btn';
+      btn.setAttribute('type', 'button');
+      btn.setAttribute('aria-label', t.name);
+      btn.style.setProperty('--btn-bg', theme.bg);
+      btn.style.setProperty('--btn-depth', theme.depth);
+      btn.style.setProperty('--btn-outline', theme.outline);
+      btn.style.animationDelay = `${0.1 + i * 0.08}s`;
+
+      btn.innerHTML = `
+        <span class="btn-icon">${t.logo}</span>
+        <span class="btn-text">
+          <span class="tm-name">${t.name}</span>
+          <span class="tm-meta">${formatLabel}</span>
+        </span>
+      `;
+
+      btn.addEventListener('click', () => {
+        this.game.soundManager.playSound('click');
+        this.game.sceneManager.switchTo('TournamentTeamSelect', { tournamentId: t.id });
+      });
+
+      this.grid.appendChild(btn);
+      this.menuButtons.push(btn);
+    });
+  }
+
+  _destroyButtons() {
+    this.menuButtons.forEach(btn => {
+      if (btn.parentNode) btn.parentNode.removeChild(btn);
+    });
+    this.menuButtons = [];
   }
 
   update(dt) {
-    if (this.entranceTimer < this.entranceDuration) {
-      this.entranceTimer = Math.min(this.entranceTimer + dt, this.entranceDuration);
-    }
-    const p = this.game.inputManager.pointer;
-
-    this.cards.forEach(card => {
-      card.hovered = isPointerOverButton(p, { x: 960, y: card.baseY, w: 780, h: 100 });
-    });
-
-    if (p.isTapped) {
-      for (const card of this.cards) {
-        if (card.hovered) {
-          this.game.soundManager.playSound('click');
-          this.game.sceneManager.switchTo('TournamentTeamSelect', { tournamentId: card.id });
-          return;
-        }
-      }
-    }
-
+    this.entranceTimer = Math.min(this.entranceTimer + dt, 0.6);
     if (this.game.inputManager.isKeyJustPressed('Escape')) {
+      this.game.soundManager.playSound('click');
       this.game.sceneManager.switchTo('MainMenu');
     }
   }
 
   render(ctx) {
-    ctx.fillStyle = '#0f1a2e';
+    ctx.fillStyle = '#0b1a30';
     ctx.fillRect(0, 0, 1920, 1080);
-    this.renderBg(ctx);
-    this.renderTitle(ctx);
-    this.renderCards(ctx);
-    this.renderFooter(ctx);
-  }
 
-  renderBg(ctx) {
-    const grad = ctx.createRadialGradient(960, 300, 50, 960, 300, 800);
-    grad.addColorStop(0, 'rgba(139, 92, 246, 0.04)');
-    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    const grad = ctx.createRadialGradient(960, 200, 100, 960, 200, 900);
+    grad.addColorStop(0, '#162a4a');
+    grad.addColorStop(1, '#0b1a30');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 1920, 1080);
-
-    ctx.strokeStyle = 'rgba(139, 92, 246, 0.03)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < 25; i++) {
-      const x = i * 80;
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x + 150, 1080);
-      ctx.stroke();
-    }
-  }
-
-  renderTitle(ctx) {
-    const progress = Math.min(1, this.entranceTimer / this.entranceDuration);
-    const ease = 1 - Math.pow(1 - progress, 3);
-    ctx.save();
-    ctx.globalAlpha = ease;
-    drawGlowingText(ctx, '🏟 TOURNAMENTS', 960, 120,
-      '900 56px Outfit, sans-serif', COLORS.white, 'rgba(139, 92, 246, 0.3)', 20);
-    ctx.restore();
-  }
-
-  renderCards(ctx) {
-    const progress = Math.min(1, this.entranceTimer / this.entranceDuration);
-    this.cards.forEach((card, i) => {
-      const delay = 0.1 + i * 0.07;
-      const cardProgress = Math.max(0, Math.min(1, (progress - delay) / 0.3));
-      const ease = 1 - Math.pow(1 - cardProgress, 3);
-      if (ease <= 0) return;
-
-      ctx.save();
-      ctx.globalAlpha = ease;
-      const y = card.baseY;
-      const isHover = card.hovered;
-      const scale = isHover ? 1.02 : 1;
-
-      ctx.translate(960, y);
-      ctx.scale(scale, scale);
-      ctx.translate(-960, -y);
-
-      ctx.fillStyle = isHover ? 'rgba(20, 30, 50, 0.95)' : 'rgba(15, 23, 42, 0.85)';
-      ctx.strokeStyle = isHover ? card.color : 'rgba(255,255,255,0.08)';
-      ctx.lineWidth = isHover ? 2.5 : 1.5;
-      ctx.beginPath();
-      drawRoundRect(ctx, 560, y - 50, 800, 100, 16);
-      ctx.fill();
-      ctx.stroke();
-
-      if (isHover) {
-        ctx.shadowColor = card.colorGlow;
-        ctx.shadowBlur = 20;
-        ctx.beginPath();
-        drawRoundRect(ctx, 560, y - 50, 800, 100, 16);
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-      }
-
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-
-      ctx.font = '42px sans-serif';
-      ctx.fillText(card.logo, 600, y);
-
-      ctx.font = '800 26px Outfit, sans-serif';
-      ctx.fillStyle = COLORS.white;
-      ctx.fillText(card.name, 690, y - 8);
-
-      ctx.font = '500 14px Space Grotesk, monospace';
-      ctx.fillStyle = COLORS.slate;
-      const formatLabel = card.format === 'league' ? 'League' : 'Group + Knockout';
-      ctx.fillText(`${card.teams.length} teams  •  ${formatLabel}`, 690, y + 22);
-
-      ctx.textAlign = 'right';
-      ctx.font = '36px sans-serif';
-      ctx.fillText(card.trophy, 1320, y);
-
-      ctx.textAlign = 'center';
-      ctx.font = '700 12px Space Grotesk, monospace';
-      ctx.fillStyle = card.color;
-      ctx.fillText(card.format === 'league' ? 'LEAGUE' : 'KNOCKOUT', 960, y + 42);
-
-      ctx.restore();
-    });
-  }
-
-  renderFooter(ctx) {
-    const progress = Math.min(1, this.entranceTimer / this.entranceDuration);
-    ctx.save();
-    ctx.globalAlpha = progress * 0.6;
-    ctx.font = '500 12px Space Grotesk, monospace';
-    ctx.fillStyle = COLORS.darkSlate;
-    ctx.textAlign = 'center';
-    ctx.fillText('SELECT A TOURNAMENT TO BEGIN', 960, 1050);
-    ctx.restore();
   }
 }
 

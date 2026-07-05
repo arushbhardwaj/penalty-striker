@@ -83,13 +83,24 @@
                 <div class="qp-start-section" id="qp-start-section"></div>
             </div>
 
-            <div id="tournament-menu-overlay" class="tournament-menu-overlay hidden" aria-hidden="true">
-                <button class="qp-back-door-btn" id="tm-back-btn" type="button" aria-label="Back to Main Menu">
-                    <span class="btn-icon">
-                        <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </span>
-                    <span class="btn-text">BACK</span>
-                </button>
+            <div id="tournament-menu-overlay" class="quickplay-overlay hidden" aria-hidden="true">
+                <div class="qp-header">
+                    <h1 class="qp-title">🏟 TOURNAMENTS</h1>
+                    <p class="qp-subtitle">Choose a Competition</p>
+                </div>
+
+                <div class="tm-scroll-wrapper">
+                    <div class="tm-grid" id="tm-grid"></div>
+                </div>
+
+                <div class="qp-start-section" id="tm-start-section">
+                    <button class="qp-back-door-btn" id="tm-back-btn" type="button" aria-label="Back to Main Menu">
+                        <span class="btn-icon">
+                            <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                        <span class="btn-text">BACK</span>
+                    </button>
+                </div>
             </div>
 
             <div id="tournament-team-overlay" class="quickplay-overlay hidden" aria-hidden="true">
