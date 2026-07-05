@@ -44,4 +44,5 @@ export const STORAGE_KEYS = {
   volume: 'penalty_volume',
   highScore: 'penalty_highscore',
   matches: 'penalty_matches',
+  tournament: 'penalty_tournament_v2',
 };

@@ -188,6 +188,8 @@ export class GameplayScene extends Scene {
     this.roundIndex = 0;
     this.totalRounds = 0;
     this.showResult = false;
+    this.opponentScore = 0;
+    this.matchIntroData = null;
 
     this.clouds = [];
     for (let i = 0; i < 10; i++) {
@@ -259,6 +261,8 @@ export class GameplayScene extends Scene {
     this.roundName = data.roundName || '';
     this.roundIndex = data.roundIndex || 0;
     this.totalRounds = data.totalRounds || 0;
+    this.opponentScore = data.opponentScore || 0;
+    this.matchIntroData = data.matchIntroData || null;
 
     const difficulty = data.difficulty || 'normal';
     const maxAttempts = data.maxAttempts !== undefined ? data.maxAttempts : 5;
@@ -361,26 +365,16 @@ export class GameplayScene extends Scene {
       this.matchEnded = true;
       this.matchEndTimer = 0;
       const tm = this.game.modeManager.tournament;
-      const won = this.shotsScored >= this.goalsRequired;
+      const won = this.shotsScored > this.opponentScore;
+      const drawn = this.shotsScored === this.opponentScore;
 
-      tm.recordMatchResult({
-        score: this.shotsScored,
-        attempts: this.shotsTaken,
-        goalsRequired: this.goalsRequired,
-      });
+      const finalPlayerScore = drawn ? this.shotsScored + 1 : this.shotsScored;
+      const finalOpponentScore = drawn ? this.opponentScore : this.opponentScore;
+
+      tm.recordPlayerMatchResult(finalPlayerScore, finalOpponentScore);
 
       setTimeout(() => {
-        const isChampion = tm.currentRound >= (tm.currentTournament?.rounds?.length || 0);
-        this.game.sceneManager.switchTo('TournamentResult', {
-          won,
-          stats: { score: this.shotsScored, attempts: this.shotsTaken },
-          roundName: this.roundName,
-          tournamentName: tm.currentTournament?.name || '',
-          isChampion,
-          goalsRequired: this.goalsRequired,
-          rewardCoins: tm.currentTournament?.rewardCoins || 0,
-          rewardXP: tm.currentTournament?.rewardXP || 0,
-        });
+        this.game.sceneManager.switchTo('TournamentHub');
       }, 600);
     }
   }
@@ -437,12 +431,16 @@ export class GameplayScene extends Scene {
 
     if (this.mode === 'practice') {
       this.renderPracticeHUD(ctx);
+    } else if (this.mode === 'tournament') {
+      const maxAttempts = this.modeConfig?.maxAttempts || 5;
+      renderHUD(ctx, this.shotsScored, maxAttempts, Math.max(1, this.currentStreak));
+      this.renderOpponentScore(ctx);
     } else {
       const maxAttempts = this.modeConfig?.maxAttempts || 5;
       renderHUD(ctx, this.shotsScored, maxAttempts, Math.max(1, this.currentStreak));
     }
 
-    if (this.mode === 'tournament' && this.roundName) {
+    if (this.mode === 'tournament') {
       this.renderTournamentRoundInfo(ctx);
     }
 
@@ -460,23 +458,55 @@ export class GameplayScene extends Scene {
 
   renderTournamentRoundInfo(ctx) {
     ctx.save();
-    ctx.fillStyle = 'rgba(139, 92, 246, 0.15)';
-    ctx.strokeStyle = COLORS.purple;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    drawRoundRect(ctx, 80, 40, 280, 80, 14);
-    ctx.fill();
-    ctx.stroke();
 
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.font = 'bold 14px Space Grotesk, monospace';
-    ctx.fillStyle = COLORS.purple;
-    ctx.fillText('TOURNAMENT', 220, 64);
+    if (this.matchIntroData) {
+      ctx.fillStyle = 'rgba(139, 92, 246, 0.12)';
+      ctx.strokeStyle = COLORS.purple;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      drawRoundRect(ctx, 80, 40, 320, 90, 14);
+      ctx.fill();
+      ctx.stroke();
 
-    ctx.font = 'bold 20px Outfit, sans-serif';
-    ctx.fillStyle = COLORS.white;
-    ctx.fillText(this.roundName, 220, 98);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = 'bold 11px Space Grotesk, monospace';
+      ctx.fillStyle = COLORS.purple;
+      ctx.fillText('TOURNAMENT MATCH', 240, 56);
+
+      ctx.font = 'bold 15px Outfit, sans-serif';
+      ctx.fillStyle = COLORS.white;
+      ctx.fillText(`${this.matchIntroData.playerTeamName} vs ${this.matchIntroData.opponentTeamName}`, 240, 80);
+
+      ctx.font = '500 12px Space Grotesk, monospace';
+      ctx.fillStyle = COLORS.slate;
+      ctx.fillText(`${this.matchIntroData.stageName}`, 240, 106);
+
+      if (this.opponentScore > 0) {
+        ctx.textAlign = 'right';
+        ctx.font = 'bold 12px Space Grotesk, monospace';
+        ctx.fillStyle = COLORS.gold;
+        ctx.fillText(`Opponent needs: ${this.opponentScore}`, 390, 106);
+      }
+    } else {
+      ctx.fillStyle = 'rgba(139, 92, 246, 0.15)';
+      ctx.strokeStyle = COLORS.purple;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      drawRoundRect(ctx, 80, 40, 280, 80, 14);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = 'bold 14px Space Grotesk, monospace';
+      ctx.fillStyle = COLORS.purple;
+      ctx.fillText('TOURNAMENT', 220, 64);
+
+      ctx.font = 'bold 20px Outfit, sans-serif';
+      ctx.fillStyle = COLORS.white;
+      ctx.fillText(this.roundName, 220, 98);
+    }
 
     ctx.restore();
   }
@@ -551,6 +581,30 @@ export class GameplayScene extends Scene {
     ctx.stroke();
     drawGlowingText(ctx, 'FLICK OR DRAG BALL UPWARDS TO SHOOT', 960, 960,
       'bold 16px Space Grotesk, monospace', COLORS.white, 'rgba(0,0,0,0.5)', 8);
+    ctx.restore();
+  }
+
+  renderOpponentScore(ctx) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+    ctx.strokeStyle = COLORS.border;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    drawRoundRect(ctx, 1160, 40, 260, 80, 16);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 12px Space Grotesk, monospace';
+    ctx.fillStyle = COLORS.darkSlate;
+    ctx.fillText('OPPONENT SCORE', 1290, 60);
+
+    const needed = Math.max(0, this.opponentScore);
+    const isBeaten = this.shotsTaken >= 5 && this.shotsScored > needed;
+    ctx.font = 'bold 28px Outfit, sans-serif';
+    ctx.fillStyle = isBeaten ? COLORS.green : COLORS.white;
+    ctx.fillText(`Need ${needed} to beat`, 1290, 100);
     ctx.restore();
   }
 

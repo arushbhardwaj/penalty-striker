@@ -83,6 +83,40 @@
                 <div class="qp-start-section" id="qp-start-section"></div>
             </div>
 
+            <div id="tournament-menu-overlay" class="tournament-menu-overlay hidden" aria-hidden="true">
+                <button class="qp-back-door-btn" id="tm-back-btn" type="button" aria-label="Back to Main Menu">
+                    <span class="btn-icon">
+                        <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                    <span class="btn-text">BACK</span>
+                </button>
+            </div>
+
+            <div id="tournament-team-overlay" class="quickplay-overlay hidden" aria-hidden="true">
+                <div class="qp-header">
+                    <h1 class="qp-title" id="tt-title">🏆 Tournament</h1>
+                    <p class="qp-subtitle" id="tt-subtitle">Choose Your Team</p>
+                </div>
+
+                <div class="qp-scroll-wrapper">
+                    <div class="qp-team-grid" id="tt-team-grid"></div>
+                </div>
+
+                <div class="qp-indicator" id="tt-indicator">
+                    <span class="qp-indicator-label">YOUR TEAM</span>
+                    <div class="qp-indicator-row">
+                        <div class="qp-team-slot qp-home-slot" style="justify-content:center">
+                            <img class="qp-slot-flag" id="tt-selected-flag" src="" alt="">
+                            <span class="qp-slot-flag-fallback" id="tt-selected-flag-fallback" style="display:none"></span>
+                            <span class="qp-slot-name" id="tt-selected-name">Select a team</span>
+                            <span class="qp-slot-rating" id="tt-selected-rating"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="qp-start-section" id="tt-start-section"></div>
+            </div>
+
             <div id="orientation-overlay">
                 <div class="overlay-content">
                     <div class="phone-icon">

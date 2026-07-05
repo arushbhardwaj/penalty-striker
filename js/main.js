@@ -2,7 +2,7 @@ import { Game } from './game.js';
 import { LoadingScene, MainMenuScene } from './ui/menu.js';
 import { PauseScene, GameOverScene, SettingsScene, HowToPlayScene, QuickPlayResultScene } from './ui/popup.js';
 import { GameplayScene } from './game.js';
-import { TournamentMenuScene, TournamentResultScene } from './ui/TournamentScene.js';
+import { TournamentMenuScene, TournamentTeamSelectScene, TournamentMatchIntroScene, TournamentHubScene } from './ui/TournamentScene.js';
 import { QuickPlaySetupScene } from './ui/QuickPlayScene.js';
 import { PracticeSetupScene } from './ui/PracticeScene.js';
 
@@ -19,7 +19,9 @@ window.addEventListener('load', () => {
     { name: 'Pause', instance: new PauseScene(game) },
     { name: 'GameOver', instance: new GameOverScene(game) },
     { name: 'TournamentMenu', instance: new TournamentMenuScene(game) },
-    { name: 'TournamentResult', instance: new TournamentResultScene(game) },
+    { name: 'TournamentTeamSelect', instance: new TournamentTeamSelectScene(game) },
+    { name: 'TournamentMatchIntro', instance: new TournamentMatchIntroScene(game) },
+    { name: 'TournamentHub', instance: new TournamentHubScene(game) },
     { name: 'QuickPlaySetup', instance: new QuickPlaySetupScene(game) },
     { name: 'QuickPlayResult', instance: new QuickPlayResultScene(game) },
     { name: 'PracticeSetup', instance: new PracticeSetupScene(game) },

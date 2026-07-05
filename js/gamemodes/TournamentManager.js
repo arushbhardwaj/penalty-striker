@@ -1,143 +1,104 @@
-import { SaveManager } from '../systems/save.js';
-
-const STORAGE_KEY = 'penalty_tournament';
+import { TournamentEngine } from './TournamentEngine.js';
+import { TOURNAMENT_DEFS } from '../data/tournaments.js';
 
 export class TournamentManager {
   constructor() {
-    this.currentTournament = null;
-    this.currentRound = 0;
-    this.matchResults = [];
-    this.isActive = false;
-    this.trophiesUnlocked = 0;
-    this.completedTournaments = [];
-    this.totalCoins = 0;
-    this.totalXP = 0;
-    this.load();
+    this.engine = new TournamentEngine();
+    this.currentDifficulty = 'normal';
   }
 
-  load() {
-    const data = SaveManager.load(STORAGE_KEY, {});
-    this.trophiesUnlocked = data.trophiesUnlocked || 0;
-    this.completedTournaments = data.completedTournaments || [];
-    this.totalCoins = data.totalCoins || 0;
-    this.totalXP = data.totalXP || 0;
-    if (data.currentTournament) {
-      this.currentTournament = data.currentTournament;
-      this.currentRound = data.currentRound || 0;
-      this.matchResults = data.matchResults || [];
-      this.isActive = data.isActive || false;
-    }
+  startNewTournament(tournamentId, playerTeamId) {
+    const def = TOURNAMENT_DEFS.find(t => t.id === tournamentId);
+    if (!def) return false;
+    this.engine.init(def, playerTeamId);
+    this.currentDifficulty = 'normal';
+    return true;
   }
 
-  save() {
-    const data = {
-      trophiesUnlocked: this.trophiesUnlocked,
-      completedTournaments: this.completedTournaments,
-      totalCoins: this.totalCoins,
-      totalXP: this.totalXP,
+  getNextMatch() {
+    return this.engine.currentMatch;
+  }
+
+  getOpponentPenaltyScore() {
+    const opponentId = this.engine.getOpponentTeamId();
+    if (!opponentId) return 3;
+    return this.engine.simulateOpponentPenaltyScore(opponentId, this.currentDifficulty);
+  }
+
+  recordPlayerMatchResult(playerGoals, opponentGoals) {
+    this.engine.recordPlayerMatchResult(playerGoals, opponentGoals, this.currentDifficulty);
+  }
+
+  isEliminated() {
+    return this.engine.isEliminated;
+  }
+
+  isChampion() {
+    return this.engine.isComplete;
+  }
+
+  getMatchIntroData() {
+    return {
+      tournamentName: this.engine.getTournamentName(),
+      tournamentLogo: this.engine.getTournamentLogo(),
+      stageName: this.engine.getCurrentStageName(),
+      matchLabel: this.engine.getMatchLabel(),
+      playerTeamId: this.engine.getPlayerTeamId(),
+      playerTeamName: this.engine.getPlayerTeamName(),
+      playerTeamFlag: this.engine.getPlayerTeamFlag(),
+      opponentTeamId: this.engine.getOpponentTeamId(),
+      opponentTeamName: this.engine.getOpponentTeamName(),
+      opponentTeamFlag: this.engine.getOpponentTeamFlag(),
     };
-    if (this.isActive && this.currentTournament) {
-      data.currentTournament = this.currentTournament;
-      data.currentRound = this.currentRound;
-      data.matchResults = this.matchResults;
-      data.isActive = this.isActive;
-    }
-    SaveManager.save(STORAGE_KEY, data);
   }
 
-  isUnlocked(tournament) {
-    return this.trophiesUnlocked >= tournament.requiredTrophies;
+  getHubData() {
+    return {
+      tournamentName: this.engine.getTournamentName(),
+      tournamentLogo: this.engine.getTournamentLogo(),
+      tournamentTrophy: this.engine.getTournamentTrophy(),
+      tournamentColor: this.engine.getTournamentColor(),
+      stageName: this.engine.getCurrentStageName(),
+      matchLabel: this.engine.getMatchLabel(),
+      playerTeamId: this.engine.getPlayerTeamId(),
+      playerTeamName: this.engine.getPlayerTeamName(),
+      playerTeamFlag: this.engine.getPlayerTeamFlag(),
+      opponentTeamId: this.engine.getOpponentTeamId(),
+      opponentTeamName: this.engine.getOpponentTeamName(),
+      opponentTeamFlag: this.engine.getOpponentTeamFlag(),
+      format: this.engine.def?.format,
+      groupStandings: this.engine.getAllGroupStandings(),
+      playerGroupName: this.engine.getPlayerGroupName(),
+      knockoutBracket: this.engine.getKnockoutBracket(),
+      leagueTable: this.engine.getSortedLeagueTable(),
+      matchHistory: this.engine.matchHistory,
+      leagueProgress: this.engine.getLeagueProgress(),
+      isEliminated: this.engine.isEliminated,
+      isComplete: this.engine.isComplete,
+    };
   }
 
-  startTournament(tournament) {
-    this.currentTournament = { ...tournament };
-    this.currentRound = 0;
-    this.matchResults = [];
-    this.isActive = true;
-    this.save();
-  }
-
-  getCurrentRoundName() {
-    if (!this.currentTournament) return '';
-    return this.currentTournament.rounds[this.currentRound] || 'Final';
-  }
-
-  getGoalsRequired() {
-    if (!this.currentTournament) return 0;
-    return this.currentTournament.goalsToAdvance[this.currentRound] || 999;
-  }
-
-  getRoundDifficulty() {
-    if (!this.currentTournament) return 'normal';
-    const base = this.currentTournament.difficulty;
-    const roundBonus = this.currentRound * 0.15;
-    const difficulties = ['easy', 'normal', 'hard', 'expert', 'legendary'];
-    const baseIdx = difficulties.indexOf(base);
-    if (baseIdx === -1) return base;
-    const adjustedIdx = Math.min(difficulties.length - 1, Math.floor(baseIdx + roundBonus));
-    return difficulties[adjustedIdx];
-  }
-
-  recordMatchResult(stats) {
-    const goalsRequired = this.getGoalsRequired();
-    const won = stats.score >= goalsRequired;
-    this.matchResults.push({
-      round: this.currentRound,
-      roundName: this.getCurrentRoundName(),
-      score: stats.score,
-      attempts: stats.attempts,
-      goalsRequired,
-      won,
-      difficulty: this.getRoundDifficulty(),
-    });
-    if (won) {
-      this.currentRound++;
-      if (this.currentRound >= this.currentTournament.rounds.length) {
-        this.completeTournament();
-      }
-    } else {
-      this.isActive = false;
-    }
-    this.save();
-  }
-
-  completeTournament() {
-    this.trophiesUnlocked++;
-    this.completedTournaments.push(this.currentTournament.id);
-    this.totalCoins += this.currentTournament.rewardCoins;
-    this.totalXP += this.currentTournament.rewardXP;
-    this.isActive = false;
-    this.save();
-  }
-
-  getTournamentProgress() {
-    if (!this.currentTournament) return 0;
-    return (this.currentRound / this.currentTournament.rounds.length) * 100;
-  }
-
-  canContinue() {
-    return this.isActive && this.currentTournament && this.currentRound < this.currentTournament.rounds.length;
+  getGameplayData() {
+    const opponentScore = this.getOpponentPenaltyScore();
+    return {
+      mode: 'tournament',
+      difficulty: this.currentDifficulty,
+      maxAttempts: 5,
+      opponentScore,
+      matchIntroData: this.getMatchIntroData(),
+    };
   }
 
   abandonTournament() {
-    this.isActive = false;
-    this.currentTournament = null;
-    this.currentRound = 0;
-    this.matchResults = [];
-    this.save();
+    this.engine = new TournamentEngine();
+    this.currentDifficulty = 'normal';
   }
 
-  addCoins(amount) {
-    this.totalCoins += amount;
-    this.save();
+  getTournamentDefs() {
+    return TOURNAMENT_DEFS;
   }
 
-  addXP(amount) {
-    this.totalXP += amount;
-    this.save();
-  }
-
-  isTournamentCompleted(tournamentId) {
-    return this.completedTournaments.includes(tournamentId);
+  getCurrentTournamentDef() {
+    return this.engine.def;
   }
 }
