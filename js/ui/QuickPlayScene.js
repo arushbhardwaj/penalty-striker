@@ -1,204 +1,399 @@
 import { Scene } from '../game.js';
 import { COLORS } from '../config.js';
-import { drawRoundRect, drawGlowingText, isPointerOverButton, renderBaseButton } from '../utils/helpers.js';
+import { MenuButton } from './MenuButton.js';
+import { TEAMS } from '../data/teams.js';
+import { SaveManager } from '../systems/save.js';
+
+const DIFFICULTY_KEY = 'penalty_qp_difficulty';
 
 export class QuickPlaySetupScene extends Scene {
   constructor(game) {
     super(game);
-    this.backBtn = { x: 120, y: 80, w: 140, h: 56, label: '← BACK', hovered: false };
-    this.startBtn = { x: 960, y: 820, w: 320, h: 64, label: '⚽ START MATCH', hovered: false };
-    this.difficultyOptions = [
-      { label: 'Easy', value: 'easy', y: 400, hovered: false },
-      { label: 'Normal', value: 'normal', y: 470, hovered: false },
-      { label: 'Hard', value: 'hard', y: 540, hovered: false },
-    ];
-    this.matchLengthOptions = [
-      { label: '5 Shots', value: 5, y: 660, hovered: false },
-      { label: '10 Shots', value: 10, y: 730, hovered: false },
-      { label: 'Endless', value: 0, y: 800, hovered: false },
-    ];
-    this.selectedDifficulty = 'normal';
-    this.selectedLength = 5;
+    this.overlay = document.getElementById('quickplay-overlay');
+    this.teamGrid = document.getElementById('qp-team-grid');
+
+    this.playerTeam = null;
+    this.opponentTeam = null;
+    this.selectionPhase = 'start';
+    this.nextChange = 'player';
+    this.selectedDifficulty = SaveManager.load(DIFFICULTY_KEY, 'normal');
+
+    this.difficultyButtons = [];
+    this.startButton = null;
+
     this.entranceTimer = 0;
   }
 
-  enter() {
+    enter() {
     this.entranceTimer = 0;
+    this.playerTeam = null;
+    this.opponentTeam = null;
+    this.selectionPhase = 'start';
+    this.nextChange = 'player';
+
+    if (this.overlay) {
+      this.overlay.classList.remove('hidden');
+      this.overlay.getBoundingClientRect();
+      this.overlay.classList.add('active');
+
+      this._createTeamCards();
+      this._createDifficultyButtons();
+      this._createStartButton();
+      this._setupBackButton();
+      this._updateUI();
+    }
+  }
+
+  exit() {
+    if (this.overlay) {
+      this.overlay.classList.remove('active');
+      this.overlay.classList.add('hidden');
+    }
+    this._destroyTeamCards();
+    this._destroyDifficultyButtons();
+    this._destroyStartButton();
+    this._teardownBackButton();
   }
 
   update(dt) {
-    this.entranceTimer = Math.min(this.entranceTimer + dt, 1);
-    const p = this.game.inputManager.pointer;
-
-    this.backBtn.hovered = isPointerOverButton(p, this.backBtn);
-    this.startBtn.hovered = isPointerOverButton(p, this.startBtn);
-
-    this.difficultyOptions.forEach(opt => {
-      opt.hovered = isPointerOverButton(p, {
-        x: 660, y: opt.y, w: 200, h: 50
-      });
-    });
-
-    this.matchLengthOptions.forEach(opt => {
-      opt.hovered = isPointerOverButton(p, {
-        x: 960, y: opt.y, w: 200, h: 50
-      });
-    });
-
-    if (p.isTapped) {
-      if (this.backBtn.hovered) {
-        this.game.soundManager.playSound('click');
-        this.game.sceneManager.switchTo('MainMenu');
-        return;
-      }
-      if (this.startBtn.hovered) {
-        this.game.soundManager.playSound('click');
-        this.game.sceneManager.switchTo('Gameplay', {
-          mode: 'quickplay',
-          difficulty: this.selectedDifficulty,
-          maxAttempts: this.selectedLength === 0 ? null : this.selectedLength,
-          matchLength: this.selectedLength,
-        });
-        return;
-      }
-      for (const opt of this.difficultyOptions) {
-        if (opt.hovered) {
-          this.game.soundManager.playSound('click');
-          this.selectedDifficulty = opt.value;
-          return;
-        }
-      }
-      for (const opt of this.matchLengthOptions) {
-        if (opt.hovered) {
-          this.game.soundManager.playSound('click');
-          this.selectedLength = opt.value;
-          return;
-        }
-      }
-    }
     if (this.game.inputManager.isKeyJustPressed('Escape')) {
+      this.game.soundManager.playSound('click');
       this.game.sceneManager.switchTo('MainMenu');
     }
   }
 
   render(ctx) {
-    ctx.fillStyle = '#2a4a6a';
-    ctx.fillRect(0, 0, 1920, 1080);
-    this.renderBackground(ctx);
-    this.renderTitle(ctx);
-    this.renderDifficulty(ctx);
-    this.renderMatchLength(ctx);
-    this.renderStartButton(ctx);
-    this.renderBackButton(ctx);
+    this._renderBackground(ctx);
   }
 
-  renderBackground(ctx) {
-    const grad = ctx.createRadialGradient(960, 400, 50, 960, 400, 700);
-    grad.addColorStop(0, 'rgba(16, 185, 129, 0.05)');
-    grad.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = grad;
+  _renderBackground(ctx) {
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, 1080);
+    skyGrad.addColorStop(0, '#0a1628');
+    skyGrad.addColorStop(0.25, '#0f1f3a');
+    skyGrad.addColorStop(0.5, '#152a4a');
+    skyGrad.addColorStop(0.75, '#1a3460');
+    skyGrad.addColorStop(1, '#0d1f3a');
+    ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, 1920, 1080);
 
-    ctx.strokeStyle = 'rgba(16, 185, 129, 0.03)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < 20; i++) {
-      const x = i * 100;
+    const glow = ctx.createRadialGradient(960, 0, 50, 960, 0, 700);
+    glow.addColorStop(0, 'rgba(255, 255, 220, 0.06)');
+    glow.addColorStop(1, 'rgba(255, 255, 220, 0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, 1920, 700);
+
+    ctx.fillStyle = 'rgba(15, 55, 30, 0.35)';
+    ctx.beginPath();
+    ctx.moveTo(0, 1080);
+    ctx.lineTo(250, 720);
+    ctx.lineTo(1670, 720);
+    ctx.lineTo(1920, 1080);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.015)';
+    for (let i = 0; i < 14; i++) {
+      if (i % 2 === 0) {
+        const x1 = 250 + i * 100;
+        const x2 = 250 + (i + 1) * 100;
+        ctx.beginPath();
+        ctx.moveTo(x1, 720);
+        ctx.lineTo(x2, 720);
+        ctx.lineTo(137 + i * 137, 1080);
+        ctx.lineTo(68 + i * 137, 1080);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    for (let i = 0; i < 40; i++) {
+      const sx = (i * 97.3 + 43) % 1920;
+      const sy = 15 + (i * 61.7 + 29) % 320;
+      const sr = 0.5 + (i % 4) * 0.25;
       ctx.beginPath();
-      ctx.moveTo(x, 1080);
-      ctx.lineTo(x + 200, 0);
-      ctx.stroke();
+      ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
 
-  renderTitle(ctx) {
-    const progress = Math.min(1, this.entranceTimer / 0.6);
-    const ease = 1 - Math.pow(1 - progress, 3);
-    ctx.save();
-    ctx.globalAlpha = ease;
-    drawGlowingText(ctx, '⚽ QUICK PLAY', 960, 160,
-      '900 56px Outfit, sans-serif', COLORS.white, COLORS.greenGlow, 20);
+  _createTeamCards() {
+    this.teamGrid.innerHTML = '';
+    TEAMS.forEach(team => {
+      const card = document.createElement('div');
+      card.className = 'qp-team-card';
+      card.dataset.teamId = team.id;
+      card.tabIndex = 0;
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-label', `Select ${team.name}`);
 
-    ctx.font = '500 18px Space Grotesk, monospace';
-    ctx.fillStyle = COLORS.slate;
-    ctx.textAlign = 'center';
-    ctx.fillText('Jump straight into the action', 960, 210);
-    ctx.restore();
+      card.innerHTML = `
+        <img class="qp-card-flag" src="assets/flags/${team.flagCode}.png" alt="${team.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+        <span class="qp-card-flag-fallback" style="display:none">${team.flag}</span>
+        <span class="qp-card-name">${team.name}</span>
+        <span class="qp-card-rating">${team.rating}</span>
+      `;
+
+      card.addEventListener('click', () => this._handleCardClick(team));
+      card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          this._handleCardClick(team);
+        }
+      });
+
+      this.teamGrid.appendChild(card);
+    });
   }
 
-  renderDifficulty(ctx) {
-    const progress = Math.min(1, this.entranceTimer / 0.6);
-    ctx.save();
-    ctx.globalAlpha = progress;
+  _destroyTeamCards() {
+    this.teamGrid.innerHTML = '';
+  }
 
-    ctx.font = '700 24px Outfit, sans-serif';
-    ctx.fillStyle = COLORS.white;
-    ctx.textAlign = 'center';
-    ctx.fillText('DIFFICULTY', 660, 340);
+  _handleCardClick(team) {
+    if (!this.playerTeam && !this.opponentTeam) {
+      this._setPlayerTeam(team);
+      this.selectionPhase = 'player';
+      this._updateUI();
+      return;
+    }
 
-    this.difficultyOptions.forEach(opt => {
-      const isSelected = this.selectedDifficulty === opt.value;
-      ctx.save();
-      ctx.fillStyle = opt.hovered ? COLORS.green : (isSelected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(15, 23, 42, 0.6)');
-      ctx.strokeStyle = isSelected ? COLORS.green : (opt.hovered ? COLORS.white : COLORS.border);
-      ctx.lineWidth = isSelected ? 2.5 : (opt.hovered ? 2 : 1);
-      ctx.beginPath();
-      drawRoundRect(ctx, 560, opt.y - 25, 200, 50, 12);
-      ctx.fill();
-      ctx.stroke();
+    if (this.playerTeam && !this.opponentTeam) {
+      if (team.id === this.playerTeam.id) return;
+      this._setOpponentTeam(team);
+      this.selectionPhase = 'opponent';
+      this._updateUI();
+      return;
+    }
 
-      ctx.font = '600 18px Outfit, sans-serif';
-      ctx.fillStyle = isSelected ? COLORS.green : (opt.hovered ? COLORS.white : COLORS.slate);
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(opt.label, 660, opt.y);
-      ctx.restore();
+    if (!this.playerTeam && this.opponentTeam) {
+      if (team.id === this.opponentTeam.id) return;
+      this._setPlayerTeam(team);
+      this.selectionPhase = 'opponent';
+      this._updateUI();
+      return;
+    }
+
+    if (this.playerTeam && this.opponentTeam) {
+      if (team.id === this.playerTeam.id) return;
+      if (team.id === this.opponentTeam.id) return;
+
+      if (this.nextChange === 'player') {
+        this._clearPlayerTeam();
+        this._setPlayerTeam(team);
+        this.nextChange = 'opponent';
+      } else {
+        this._clearOpponentTeam();
+        this._setOpponentTeam(team);
+        this.nextChange = 'player';
+      }
+      this._updateUI();
+    }
+  }
+
+  _setPlayerTeam(team) {
+    this.playerTeam = team;
+    const el = this.teamGrid.querySelector(`[data-team-id="${team.id}"]`);
+    if (el) {
+      el.classList.add('selected-player');
+      el.classList.remove('selected-opponent');
+      el.classList.add('just-selected');
+      setTimeout(() => el.classList.remove('just-selected'), 120);
+    }
+  }
+
+  _clearPlayerTeam() {
+    if (!this.playerTeam) return;
+    const el = this.teamGrid.querySelector(`[data-team-id="${this.playerTeam.id}"]`);
+    if (el) el.classList.remove('selected-player');
+    this.playerTeam = null;
+  }
+
+  _setOpponentTeam(team) {
+    this.opponentTeam = team;
+    const el = this.teamGrid.querySelector(`[data-team-id="${team.id}"]`);
+    if (el) {
+      el.classList.add('selected-opponent');
+      el.classList.remove('selected-player');
+      el.classList.add('just-selected');
+      setTimeout(() => el.classList.remove('just-selected'), 120);
+    }
+  }
+
+  _clearOpponentTeam() {
+    if (!this.opponentTeam) return;
+    const el = this.teamGrid.querySelector(`[data-team-id="${this.opponentTeam.id}"]`);
+    if (el) el.classList.remove('selected-opponent');
+    this.opponentTeam = null;
+  }
+
+  _createDifficultyButtons() {
+    const container = document.getElementById('qp-difficulty-buttons');
+    container.innerHTML = '';
+    this.difficultyButtons = [];
+
+    const options = [
+      { label: 'Easy', value: 'easy' },
+      { label: 'Normal', value: 'normal' },
+      { label: 'Hard', value: 'hard' },
+      { label: 'Legendary', value: 'legendary' },
+    ];
+
+    options.forEach(opt => {
+      const btn = new MenuButton({
+        label: opt.label,
+        width: 'auto',
+        maxWidth: '140px',
+        fontSize: 'clamp(0.75rem, 1.1vw, 1rem)',
+        minHeight: '44px',
+        onClick: () => this._selectDifficulty(opt.value),
+      });
+      btn.create(container);
+      btn.element.dataset.value = opt.value;
+      this.difficultyButtons.push(btn);
     });
 
-    ctx.restore();
+    this._updateDifficultyButtons();
   }
 
-  renderMatchLength(ctx) {
-    const progress = Math.min(1, this.entranceTimer / 0.6);
-    ctx.save();
-    ctx.globalAlpha = progress;
+  _destroyDifficultyButtons() {
+    this.difficultyButtons.forEach(btn => btn.destroy());
+    this.difficultyButtons = [];
+  }
 
-    ctx.font = '700 24px Outfit, sans-serif';
-    ctx.fillStyle = COLORS.white;
-    ctx.textAlign = 'center';
-    ctx.fillText('MATCH LENGTH', 960, 600);
+  _selectDifficulty(value) {
+    if (value === this.selectedDifficulty) return;
+    this.selectedDifficulty = value;
+    SaveManager.save(DIFFICULTY_KEY, value);
+    this._updateDifficultyButtons();
+    this.game.soundManager.playSound('click');
+  }
 
-    this.matchLengthOptions.forEach(opt => {
-      const isSelected = this.selectedLength === opt.value;
-      const btnX = 960;
-      ctx.save();
-      ctx.fillStyle = opt.hovered ? COLORS.blue : (isSelected ? 'rgba(14, 165, 233, 0.15)' : 'rgba(15, 23, 42, 0.6)');
-      ctx.strokeStyle = isSelected ? COLORS.blue : (opt.hovered ? COLORS.white : COLORS.border);
-      ctx.lineWidth = isSelected ? 2.5 : (opt.hovered ? 2 : 1);
-      ctx.beginPath();
-      drawRoundRect(ctx, btnX - 100, opt.y - 25, 200, 50, 12);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.font = '600 18px Outfit, sans-serif';
-      ctx.fillStyle = isSelected ? COLORS.blue : (opt.hovered ? COLORS.white : COLORS.slate);
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(opt.label, btnX, opt.y);
-      ctx.restore();
+  _updateDifficultyButtons() {
+    this.difficultyButtons.forEach(btn => {
+      const value = btn.element.dataset.value;
+      if (value === this.selectedDifficulty) {
+        btn.element.style.setProperty('--btn-bg', '#3DD66C');
+        btn.element.style.setProperty('--btn-depth', '#2CAD54');
+        btn.element.style.setProperty('--btn-outline', '#004D1A');
+      } else {
+        btn.element.style.setProperty('--btn-bg', 'rgba(30, 41, 59, 0.65)');
+        btn.element.style.setProperty('--btn-depth', 'rgba(15, 23, 42, 0.9)');
+        btn.element.style.setProperty('--btn-outline', 'rgba(100, 116, 139, 0.25)');
+      }
     });
-
-    ctx.restore();
   }
 
-  renderStartButton(ctx) {
-    const progress = Math.min(1, this.entranceTimer / 0.6);
-    ctx.save();
-    ctx.globalAlpha = progress;
-    renderBaseButton(ctx, this.startBtn, COLORS.green);
-    ctx.restore();
+  _createStartButton() {
+    const container = document.getElementById('qp-start-section');
+    container.innerHTML = '';
+
+    this.startButton = new MenuButton({
+      label: '\u26BD START MATCH',
+      theme: 'red',
+      width: '100%',
+      maxWidth: '520px',
+      fontSize: 'clamp(1.1rem, 1.8vw, 1.6rem)',
+      minHeight: '64px',
+      onClick: () => this._startMatch(),
+    });
+    this.startButton.create(container);
+    this.startButton.setDisabled(true);
   }
 
-  renderBackButton(ctx) {
-    renderBaseButton(ctx, this.backBtn, '#6a8aaa');
+  _destroyStartButton() {
+    if (this.startButton) {
+      this.startButton.destroy();
+      this.startButton = null;
+    }
+  }
+
+  _startMatch() {
+    if (!this.playerTeam || !this.opponentTeam) return;
+    this.game.soundManager.playSound('click');
+    this.game.sceneManager.switchTo('Gameplay', {
+      mode: 'quickplay',
+      difficulty: this.selectedDifficulty,
+      playerTeam: this.playerTeam,
+      opponentTeam: this.opponentTeam,
+      maxAttempts: 5,
+    });
+  }
+
+  _updateUI() {
+    this._updateIndicator();
+    this._updatePhase();
+    this._updateStartButtonState();
+  }
+
+  _updateIndicator() {
+    const homeFlag = document.getElementById('qp-home-flag');
+    const homeFallback = document.getElementById('qp-home-flag-fallback');
+    const homeName = document.getElementById('qp-home-name');
+    const awayFlag = document.getElementById('qp-away-flag');
+    const awayFallback = document.getElementById('qp-away-flag-fallback');
+    const awayName = document.getElementById('qp-away-name');
+
+    if (this.playerTeam) {
+      homeFlag.src = `assets/flags/${this.playerTeam.flagCode}.png`;
+      homeFlag.alt = this.playerTeam.name;
+      homeFlag.style.display = 'inline';
+      homeFallback.style.display = 'none';
+      homeName.textContent = this.playerTeam.name;
+    } else {
+      homeFlag.src = '';
+      homeFlag.style.display = 'none';
+      homeFallback.style.display = 'none';
+      homeName.textContent = 'Your Team: \u2014';
+    }
+
+    if (this.opponentTeam) {
+      awayFlag.src = `assets/flags/${this.opponentTeam.flagCode}.png`;
+      awayFlag.alt = this.opponentTeam.name;
+      awayFlag.style.display = 'inline';
+      awayFallback.style.display = 'none';
+      awayName.textContent = this.opponentTeam.name;
+    } else {
+      awayFlag.src = '';
+      awayFlag.style.display = 'none';
+      awayFallback.style.display = 'none';
+      awayName.textContent = 'Opponent: \u2014';
+    }
+  }
+
+  _updatePhase() {
+    const phaseEl = document.getElementById('qp-phase');
+    if (this.selectionPhase === 'start') {
+      phaseEl.style.display = 'none';
+    } else if (this.selectionPhase === 'player') {
+      phaseEl.textContent = 'Select Opponent';
+      phaseEl.style.display = 'block';
+    } else {
+      phaseEl.style.display = 'none';
+    }
+  }
+
+  _updateStartButtonState() {
+    if (this.startButton) {
+      const enabled = this.playerTeam && this.opponentTeam;
+      this.startButton.setDisabled(!enabled);
+    }
+  }
+
+  /* ── Back Button ── */
+
+  _setupBackButton() {
+    this._backHandler = () => {
+      this.game.soundManager.playSound('click');
+      this.game.sceneManager.switchTo('MainMenu');
+    };
+    const btn = document.getElementById('qp-back-btn');
+    if (btn) btn.addEventListener('click', this._backHandler);
+  }
+
+  _teardownBackButton() {
+    const btn = document.getElementById('qp-back-btn');
+    if (btn && this._backHandler) btn.removeEventListener('click', this._backHandler);
+    this._backHandler = null;
   }
 }
