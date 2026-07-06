@@ -672,20 +672,90 @@ html, body {
       border-color 200ms ease !important;
 }
 
+/* -------------------------------------------------------------
+ * Practice Overlay
+ * ------------------------------------------------------------- */
+.practice-mode-section {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 0 6px;
+}
+
+.practice-difficulty-section {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0 4px;
+}
+
+.practice-section-label {
+    font: 700 18px 'Outfit', sans-serif;
+    color: #94a3b8;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.practice-mode-buttons {
+    display: flex;
+    gap: 20px;
+}
+
+.practice-mode-buttons .game-btn {
+    padding: 14px 32px;
+    min-height: 56px;
+    min-width: 200px;
+    --b-radius: 16px;
+}
+
+.practice-difficulty-buttons {
+    display: flex;
+    gap: 14px;
+}
+
+.practice-difficulty-buttons .game-btn {
+    padding: 10px 24px;
+    min-height: 44px;
+    --b-radius: 14px;
+    transition:
+      transform 80ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 80ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      filter 180ms ease,
+      background 200ms ease,
+      border-color 200ms ease !important;
+}
+
+.practice-back-section {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    padding: 10px 0 6px;
+}
+    transition:
+      transform 80ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 80ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      filter 180ms ease,
+      background 200ms ease,
+      border-color 200ms ease !important;
+}
+
 /* Start Button Section */
 .qp-start-section {
     flex-shrink: 0;
     padding: 8px 0 4px;
     width: 100%;
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     gap: 16px;
-    flex-wrap: wrap;
 }
 
 .qp-start-section .game-btn {
-    flex: 0 1 auto;
+    flex: 1 1 auto;
     min-width: 200px;
 }
 
@@ -820,16 +890,9 @@ html, body {
     font-size: clamp(0.55rem, 0.7vw, 0.7rem);
     font-weight: 700;
     font-family: 'Nunito', sans-serif;
-    opacity: 0;
+    opacity: 0.7;
     text-transform: none;
     letter-spacing: 0;
-    transform: translateY(-4px);
-    transition: opacity 300ms ease, transform 300ms ease;
-}
-
-.tm-grid .game-btn:hover .btn-text .tm-meta {
-    opacity: 0.7;
-    transform: translateY(0);
 }
 
 /* Aspect Ratio / Orientation Trigger */

@@ -239,7 +239,6 @@ export class GameplayScene extends Scene {
       }
     }
 
-    this.practiceResetBtn = { x: 960, y: 980, w: 180, h: 50, label: 'RESET', hovered: false };
   }
 
   enter(data) {
@@ -281,6 +280,7 @@ export class GameplayScene extends Scene {
     } else if (this.mode === 'practice') {
       this.modeInstance = this.game.modeManager.startPractice({
         difficulty,
+        practiceMode: data.practiceMode || 'penalty',
         windEnabled: data.practiceOptions?.windEnabled || false,
         shotTrailEnabled: data.practiceOptions?.shotTrailEnabled || false,
         targetZonesEnabled: data.practiceOptions?.targetZonesEnabled || false,
@@ -298,10 +298,6 @@ export class GameplayScene extends Scene {
       Math.abs(p.x - this.pauseBtn.x) < this.pauseBtn.w / 2 &&
       Math.abs(p.y - this.pauseBtn.y) < this.pauseBtn.h / 2;
 
-    if (this.mode === 'practice') {
-      this.practiceResetBtn.hovered = isPointerOverButton(p, this.practiceResetBtn);
-    }
-
     if (this.matchEnded) {
       this.matchEndTimer += dt;
       return;
@@ -310,12 +306,6 @@ export class GameplayScene extends Scene {
     if (p.isTapped && this.pauseBtn.hovered) {
       this.game.soundManager.playSound('click');
       this.game.sceneManager.switchTo('Pause', this);
-      return;
-    }
-
-    if (this.mode === 'practice' && p.isTapped && this.practiceResetBtn.hovered) {
-      this.game.soundManager.playSound('click');
-      this.resetPractice();
       return;
     }
 
@@ -525,7 +515,8 @@ export class GameplayScene extends Scene {
     ctx.textBaseline = 'middle';
     ctx.font = 'bold 12px Space Grotesk, monospace';
     ctx.fillStyle = COLORS.darkSlate;
-    ctx.fillText('PRACTICE', 960, 56);
+    const modeLabel = this.modeInstance?.practiceMode === 'freekick' ? 'FREE KICK' : 'PENALTY PRACTICE';
+    ctx.fillText(modeLabel, 960, 56);
 
     ctx.font = 'bold 26px Outfit, sans-serif';
     ctx.fillStyle = COLORS.white;
@@ -560,7 +551,6 @@ export class GameplayScene extends Scene {
   }
 
   renderPracticeUI(ctx) {
-    renderBaseButton(ctx, this.practiceResetBtn, COLORS.purple);
   }
 
   renderSwipeTutorial(ctx) {

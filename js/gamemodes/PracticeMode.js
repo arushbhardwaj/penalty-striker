@@ -7,6 +7,7 @@ export class PracticeMode extends GameModeBase {
     this.name = 'Practice';
     this.displayName = 'Practice';
     this.difficulty = config.difficulty || 'normal';
+    this.practiceMode = config.practiceMode || 'penalty';
     this.windEnabled = config.windEnabled || false;
     this.shotTrailEnabled = config.shotTrailEnabled || false;
     this.targetZonesEnabled = config.targetZonesEnabled || false;

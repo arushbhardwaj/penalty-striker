@@ -23,7 +23,14 @@ export class GameModeManager {
   }
 
   startPractice(config = {}) {
-    this.practice = new PracticeMode(config);
+    this.practice = new PracticeMode({
+      difficulty: config.difficulty || 'normal',
+      practiceMode: config.practiceMode || 'penalty',
+      windEnabled: config.windEnabled || false,
+      shotTrailEnabled: config.shotTrailEnabled || false,
+      targetZonesEnabled: config.targetZonesEnabled || false,
+      instantBallReset: config.instantBallReset !== undefined ? config.instantBallReset : true,
+    });
     this.currentMode = this.practice;
     this.practice.start();
     return this.practice;

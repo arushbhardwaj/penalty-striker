@@ -252,7 +252,6 @@ export class TournamentTeamSelectScene extends Scene {
     startBtn.className = 'game-btn game-btn--blue';
     startBtn.setAttribute('type', 'button');
     startBtn.setAttribute('aria-label', 'Start Tournament');
-    startBtn.style.width = '100%';
     startBtn.style.maxWidth = '520px';
     startBtn.style.fontSize = 'clamp(1.1rem, 1.8vw, 1.6rem)';
     startBtn.style.minHeight = '64px';

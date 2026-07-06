@@ -314,7 +314,6 @@ export class QuickPlaySetupScene extends Scene {
     this.startButton = new MenuButton({
       label: '\u26BD START MATCH',
       theme: 'red',
-      width: '100%',
       maxWidth: '520px',
       fontSize: 'clamp(1.1rem, 1.8vw, 1.6rem)',
       minHeight: '64px',
