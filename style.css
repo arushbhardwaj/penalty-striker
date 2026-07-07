@@ -746,10 +746,12 @@ html, body {
     flex-shrink: 0;
     padding: 8px 0 4px;
     width: 100%;
+    min-height: 66px;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     gap: 16px;
+    position: relative;
 }
 
 .qp-start-section .game-btn {
@@ -758,6 +760,10 @@ html, body {
 }
 
 .qp-back-door-btn {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -773,7 +779,6 @@ html, body {
     outline: none;
     -webkit-tap-highlight-color: transparent;
     box-shadow: 0 6px 0 0 #6A2A2A, 0 8px 20px -5px rgba(0, 0, 0, 0.35);
-    transform: translateY(0);
     transition: transform 100ms ease-out, box-shadow 100ms ease-out, filter 100ms ease-out;
     font-family: 'Nunito', sans-serif;
     font-weight: 800;
@@ -782,7 +787,6 @@ html, body {
     text-transform: uppercase;
     letter-spacing: 0.02em;
     line-height: 1.2;
-    position: relative;
     overflow: visible;
 }
 
