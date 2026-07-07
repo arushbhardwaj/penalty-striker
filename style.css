@@ -791,13 +791,13 @@ html, body {
 }
 
 .qp-back-door-btn:hover {
-    transform: scale(1.03);
+    transform: translateY(-50%) scale(1.03);
     filter: brightness(1.12);
     box-shadow: 0 6px 0 0 #6A2A2A, 0 10px 24px -6px rgba(0, 0, 0, 0.3);
 }
 
 .qp-back-door-btn:active {
-    transform: translateY(6px) scale(1.03);
+    transform: translateY(calc(-50% + 6px)) scale(1.03);
     box-shadow: 0 0 0 0 #6A2A2A, 0 2px 6px -3px rgba(0, 0, 0, 0.25);
 }
 
