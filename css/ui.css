@@ -43,9 +43,10 @@
     font-weight: 800;
     margin-bottom: 12px;
     letter-spacing: -0.025em;
-    color: #ffffff;
+    color: transparent;
     background: linear-gradient(135deg, #ffffff 30%, #a1a1aa 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
