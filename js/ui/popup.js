@@ -5,36 +5,71 @@ import { drawRoundRect, drawGlowingText, renderBaseButton } from '../utils/helpe
 export class PauseScene extends Scene {
   constructor(game) {
     super(game);
-    this.resumeBtn = { x: 960, y: 530, w: 320, h: 64, label: 'RESUME', hovered: false };
-    this.quitBtn = { x: 960, y: 630, w: 320, h: 64, label: 'QUIT TO MENU', hovered: false };
     this.previousScene = null;
+    this._buttons = [];
   }
 
   enter(data) {
     this.previousScene = data;
+    this._createButtons();
+    const overlay = document.getElementById('pause-overlay');
+    if (overlay) {
+      overlay.classList.remove('hidden');
+      overlay.setAttribute('aria-hidden', 'false');
+    }
+  }
+
+  exit() {
+    this._destroyButtons();
+    const overlay = document.getElementById('pause-overlay');
+    if (overlay) {
+      overlay.classList.add('hidden');
+      overlay.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  _createButtons() {
+    this._destroyButtons();
+    const container = document.getElementById('pause-buttons');
+    if (!container) return;
+
+    const buttons = [
+      { label: 'RESUME', theme: 'green', action: 'resume' },
+      { label: 'QUIT TO MENU', theme: 'red', action: 'quit' },
+    ];
+
+    buttons.forEach((cfg) => {
+      const btn = document.createElement('button');
+      btn.className = `game-btn game-btn--${cfg.theme}`;
+      btn.setAttribute('type', 'button');
+      btn.setAttribute('data-action', cfg.action);
+
+      const textSpan = document.createElement('span');
+      textSpan.className = 'btn-text';
+      textSpan.textContent = cfg.label;
+      btn.appendChild(textSpan);
+
+      btn.addEventListener('click', () => {
+        this.game.soundManager.playSound('click');
+        if (cfg.action === 'resume') {
+          this.game.sceneManager.switchTo('Gameplay');
+        } else {
+          this.game.sceneManager.switchTo('MainMenu');
+        }
+      });
+
+      container.appendChild(btn);
+      this._buttons.push(btn);
+    });
+  }
+
+  _destroyButtons() {
+    const container = document.getElementById('pause-buttons');
+    if (container) container.innerHTML = '';
+    this._buttons = [];
   }
 
   update(dt) {
-    const p = this.game.inputManager.pointer;
-
-    this.resumeBtn.hovered =
-      Math.abs(p.x - this.resumeBtn.x) < this.resumeBtn.w / 2 &&
-      Math.abs(p.y - this.resumeBtn.y) < this.resumeBtn.h / 2;
-
-    this.quitBtn.hovered =
-      Math.abs(p.x - this.quitBtn.x) < this.quitBtn.w / 2 &&
-      Math.abs(p.y - this.quitBtn.y) < this.quitBtn.h / 2;
-
-    if (p.isTapped) {
-      if (this.resumeBtn.hovered) {
-        this.game.soundManager.playSound('click');
-        this.game.sceneManager.switchTo('Gameplay');
-      } else if (this.quitBtn.hovered) {
-        this.game.soundManager.playSound('click');
-        this.game.sceneManager.switchTo('MainMenu');
-      }
-    }
-
     if (this.game.inputManager.isKeyJustPressed('Escape')) {
       this.game.soundManager.playSound('click');
       this.game.sceneManager.switchTo('Gameplay');
@@ -55,21 +90,8 @@ export class PauseScene extends Scene {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
     ctx.fillRect(0, 0, 1920, 1080);
 
-    ctx.save();
-    ctx.fillStyle = 'rgba(15, 30, 50, 0.92)';
-    ctx.strokeStyle = 'rgba(14, 165, 233, 0.4)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    drawRoundRect(ctx, 760, 340, 400, 400, 24);
-    ctx.fill();
-    ctx.stroke();
-    ctx.restore();
-
-    drawGlowingText(ctx, 'PAUSED', 960, 410,
-      '900 48px Outfit, sans-serif', COLORS.white, COLORS.blueGlow, 15);
-
-    renderBaseButton(ctx, this.resumeBtn, COLORS.blue);
-    renderBaseButton(ctx, this.quitBtn, COLORS.red);
+    drawGlowingText(ctx, 'PAUSED', 960, 360,
+      '900 56px Outfit, sans-serif', COLORS.white, COLORS.blueGlow, 15);
   }
 }
 
