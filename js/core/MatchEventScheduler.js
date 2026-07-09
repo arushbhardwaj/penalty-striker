@@ -42,7 +42,7 @@ export function generateQuickPlayEvents() {
   const half1Count = Math.ceil(count / 2);
   const half2Count = count - half1Count;
 
-  const half1Minutes = half1Count > 0 ? pickMinutes(half1Count, 1, 43) : [];
+  const half1Minutes = half1Count > 0 ? pickMinutes(half1Count, 8, 43) : [];
   const half2Minutes = half2Count > 0 ? pickMinutes(half2Count, 46, 89) : [];
 
   const half1Events = half1Minutes.map(minute => ({ minute, half: 1 }));
