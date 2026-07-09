@@ -40,7 +40,7 @@ export class PracticeSetupScene extends Scene {
     this.modeButtons = [];
 
     const modes = [
-      { label: '\u26BD Penalty', value: 'penalty', theme: 'yellow' },
+      { label: '\u26BD Penalty', value: 'penalty', theme: 'green' },
       { label: '\u26A1 Freekick', value: 'freekick', theme: 'blue' },
     ];
 
