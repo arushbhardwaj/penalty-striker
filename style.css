@@ -744,8 +744,8 @@ html, body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    padding: 14px 0 6px;
+    gap: 12px;
+    padding: 18px 0 10px;
 }
 
 .practice-difficulty-section {
@@ -753,38 +753,45 @@ html, body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    padding: 10px 0 4px;
+    gap: 12px;
+    padding: 14px 0 8px;
 }
 
 .practice-section-label {
-    font: 700 18px 'Outfit', sans-serif;
+    font: 700 20px 'Outfit', sans-serif;
     color: #94a3b8;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
 }
 
 .practice-mode-buttons {
     display: flex;
-    gap: 20px;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    max-width: 320px;
 }
 
 .practice-mode-buttons .game-btn {
-    padding: 14px 32px;
-    min-height: 56px;
-    min-width: 200px;
-    --b-radius: 16px;
+    padding: 18px 36px;
+    min-height: 72px;
+    width: 100%;
+    --b-radius: 18px;
 }
 
 .practice-difficulty-buttons {
     display: flex;
-    gap: 14px;
+    gap: 18px;
+    width: 100%;
+    justify-content: center;
 }
 
 .practice-difficulty-buttons .game-btn {
-    padding: 10px 24px;
-    min-height: 44px;
-    --b-radius: 14px;
+    padding: 14px 30px;
+    min-height: 58px;
+    min-width: 160px;
+    --b-radius: 16px;
     transition: transform 80ms cubic-bezier(0.34, 1.56, 0.64, 1),
                 box-shadow 80ms cubic-bezier(0.34, 1.56, 0.64, 1),
                 filter 180ms ease,
@@ -796,12 +803,18 @@ html, body {
     flex-shrink: 0;
     display: flex;
     justify-content: center;
-    padding: 24px 0 6px;
+    padding: 28px 0 10px;
     transition: transform 80ms cubic-bezier(0.34, 1.56, 0.64, 1),
                 box-shadow 80ms cubic-bezier(0.34, 1.56, 0.64, 1),
                 filter 180ms ease,
                 background 200ms ease,
                 border-color 200ms ease !important;
+}
+
+.practice-back-section .qp-back-door-btn {
+    min-height: 56px;
+    padding: 12px 36px;
+    font-size: 1.1rem;
 }
 
 .practice-back-section .qp-back-door-btn {

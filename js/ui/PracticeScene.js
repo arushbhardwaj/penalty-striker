@@ -48,10 +48,10 @@ export class PracticeSetupScene extends Scene {
       const btn = new MenuButton({
         label: mode.label,
         theme: mode.theme,
-        width: 'auto',
-        maxWidth: '220px',
-        fontSize: 'clamp(0.95rem, 1.4vw, 1.3rem)',
-        minHeight: '54px',
+        width: '100%',
+        maxWidth: '280px',
+        fontSize: 'clamp(1.1rem, 1.6vw, 1.5rem)',
+        minHeight: '72px',
         onClick: () => this._launchPractice(mode.value),
       });
       btn.create(container);
@@ -90,10 +90,10 @@ export class PracticeSetupScene extends Scene {
     options.forEach(opt => {
       const btn = new MenuButton({
         label: opt.label,
-        width: 'auto',
-        maxWidth: '140px',
-        fontSize: 'clamp(0.75rem, 1.1vw, 1rem)',
-        minHeight: '44px',
+        width: '100%',
+        maxWidth: '180px',
+        fontSize: 'clamp(0.9rem, 1.3vw, 1.2rem)',
+        minHeight: '58px',
         onClick: () => this._selectDifficulty(opt.value),
       });
       btn.create(container);
