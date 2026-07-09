@@ -307,11 +307,41 @@ export class QuickPlayResultScene extends Scene {
     this.menuBtn = { x: 960, y: 840, w: 320, h: 64, label: 'MAIN MENU', hovered: false };
     this.result = null;
     this.entranceTimer = 0;
+    this.isEventResult = false;
+    this.flagCache = {};
   }
 
   enter(data) {
-    this.result = data || { score: 0, attempts: 0, accuracy: 0, bestStreak: 0, coinsEarned: 0, avgPower: 0, isNewBest: false, difficulty: 'normal' };
     this.entranceTimer = 0;
+    this.isEventResult = data && data.playerScore !== undefined;
+
+    if (this.isEventResult) {
+      this.result = {
+        playerScore: data.playerScore || 0,
+        opponentScore: data.opponentScore || 0,
+        playerTeam: data.playerTeam || { name: 'Home', flag: '🏳', flagCode: '' },
+        opponentTeam: data.opponentTeam || { name: 'Away', flag: '🏳', flagCode: '' },
+        difficulty: data.difficulty || 'normal',
+        events: data.events || [],
+      };
+      this._ensureFlags();
+    } else {
+      this.result = data || { score: 0, attempts: 0, accuracy: 0, bestStreak: 0, coinsEarned: 0, avgPower: 0, isNewBest: false, difficulty: 'normal' };
+    }
+  }
+
+  _ensureFlags() {
+    if (!this.isEventResult) return;
+    const codes = [this.result.playerTeam.flagCode, this.result.opponentTeam.flagCode]
+      .filter(Boolean)
+      .map(c => c.toLowerCase());
+    codes.forEach(code => {
+      if (!this.flagCache[code]) {
+        const img = new Image();
+        img.src = `assets/flags/${code}.png`;
+        this.flagCache[code] = img;
+      }
+    });
   }
 
   update(dt) {
@@ -341,6 +371,113 @@ export class QuickPlayResultScene extends Scene {
     ctx.fillStyle = '#d0e0f0';
     ctx.fillRect(0, 0, 1920, 1080);
 
+    if (this.isEventResult) {
+      this._renderEventResult(ctx);
+    } else {
+      this._renderLegacyResult(ctx);
+    }
+  }
+
+  _renderEventResult(ctx) {
+    const progress = Math.min(1, this.entranceTimer / 0.8);
+    const ps = this.result.playerScore;
+    const os = this.result.opponentScore;
+    const won = ps > os;
+    const drawn = ps === os;
+
+    ctx.save();
+    ctx.globalAlpha = progress;
+
+    const glowColor = won ? 'rgba(16, 185, 129, 0.12)' : (drawn ? 'rgba(245, 158, 11, 0.10)' : 'rgba(239, 68, 68, 0.10)');
+    const ambientGlow = ctx.createRadialGradient(960, 540, 10, 960, 540, 500);
+    ambientGlow.addColorStop(0, glowColor);
+    ambientGlow.addColorStop(1, 'rgba(100, 160, 220, 0)');
+    ctx.fillStyle = ambientGlow;
+    ctx.fillRect(0, 0, 1920, 1080);
+
+    if (won) renderConfetti(ctx);
+
+    const cardColor = won ? COLORS.green : (drawn ? COLORS.gold : COLORS.red);
+    ctx.fillStyle = 'rgba(17, 24, 39, 0.85)';
+    ctx.strokeStyle = cardColor;
+    ctx.lineWidth = won ? 3 : 2;
+    ctx.beginPath();
+    drawRoundRect(ctx, 700, 120, 520, 620, 24);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const resultLabel = won ? 'VICTORY' : (drawn ? 'DRAW' : 'DEFEAT');
+    ctx.font = '900 42px Outfit, sans-serif';
+    ctx.fillStyle = cardColor;
+    ctx.fillText(resultLabel, 960, 175);
+
+    ctx.font = 'bold 64px Outfit, sans-serif';
+    ctx.fillStyle = COLORS.white;
+    ctx.fillText(`${ps} - ${os}`, 960, 260);
+
+    ctx.font = '500 14px Space Grotesk, monospace';
+    ctx.fillStyle = COLORS.slate;
+    ctx.fillText('FINAL SCORE', 960, 295);
+
+    const flagW = 36;
+    const flagH = 24;
+
+    const pf = this.flagCache[this.result.playerTeam.flagCode?.toLowerCase()];
+    ctx.font = '500 16px Outfit, sans-serif';
+    ctx.fillStyle = COLORS.white;
+    ctx.textAlign = 'left';
+    if (pf && pf.complete && pf.naturalWidth > 0) {
+      ctx.drawImage(pf, 750, 310, flagW, flagH);
+    } else {
+      ctx.font = '20px sans-serif';
+      ctx.fillText(this.result.playerTeam.flag || '🏳', 750, 322);
+    }
+    ctx.font = '500 16px Outfit, sans-serif';
+    ctx.fillText(this.result.playerTeam.name || 'Home', 792, 322);
+
+    const of = this.flagCache[this.result.opponentTeam.flagCode?.toLowerCase()];
+    ctx.textAlign = 'left';
+    if (of && of.complete && of.naturalWidth > 0) {
+      ctx.drawImage(of, 750, 348, flagW, flagH);
+    } else {
+      ctx.font = '20px sans-serif';
+      ctx.fillText(this.result.opponentTeam.flag || '🏳', 750, 360);
+    }
+    ctx.font = '500 16px Outfit, sans-serif';
+    ctx.fillText(this.result.opponentTeam.name || 'Away', 792, 360);
+
+    const eventsTotal = this.result.events.length || 0;
+    const scored = ps;
+    const accuracy = eventsTotal > 0 ? Math.round((scored / eventsTotal) * 100) : 0;
+
+    ctx.textAlign = 'left';
+    ctx.font = '500 18px Space Grotesk, monospace';
+    ctx.fillStyle = COLORS.slate;
+    const statsY = 420;
+    ctx.fillText('Events', 750, statsY);
+    ctx.fillText('Scored', 750, statsY + 50);
+    ctx.fillText('Accuracy', 750, statsY + 100);
+    ctx.fillText('Difficulty', 750, statsY + 150);
+
+    ctx.textAlign = 'right';
+    ctx.font = 'bold 22px Outfit, sans-serif';
+    ctx.fillStyle = COLORS.white;
+    ctx.fillText(`${eventsTotal}`, 1170, statsY);
+    ctx.fillText(`${scored}`, 1170, statsY + 50);
+    ctx.fillStyle = accuracy >= 70 ? COLORS.green : (accuracy >= 40 ? COLORS.gold : COLORS.red);
+    ctx.fillText(`${accuracy}%`, 1170, statsY + 100);
+    ctx.fillStyle = COLORS.white;
+    ctx.fillText(this.result.difficulty.toUpperCase(), 1170, statsY + 150);
+
+    ctx.restore();
+    renderBaseButton(ctx, this.replayBtn, COLORS.green);
+    renderBaseButton(ctx, this.menuBtn, '#475569');
+  }
+
+  _renderLegacyResult(ctx) {
     const progress = Math.min(1, this.entranceTimer / 0.8);
 
     const glowColor = this.result.isNewBest ? 'rgba(245, 158, 11, 0.12)' : 'rgba(16, 185, 129, 0.10)';

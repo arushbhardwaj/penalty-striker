@@ -6,6 +6,7 @@ import { GameModeManager } from './gamemodes/GameModeManager.js';
 import { drawRoundRect, drawGlowingText, renderBaseButton, isPointerOverButton } from './utils/helpers.js';
 import { Ball } from './gameplay/ball.js';
 import { renderHUD, renderPauseButton, createDefaultPauseBtn } from './ui/hud.js';
+import { QUICK_PLAY_CONFIG } from './data/quickPlayConfig.js';
 
 export class Scene {
   constructor(game) {
@@ -191,6 +192,11 @@ export class GameplayScene extends Scene {
     this.opponentScore = 0;
     this.matchIntroData = null;
 
+    this.showingFlash = false;
+    this.flashTimer = 0;
+    this.flashScored = false;
+    this.flashScoreline = '';
+
     this.clouds = [];
     for (let i = 0; i < 10; i++) {
       this.clouds.push({
@@ -243,6 +249,10 @@ export class GameplayScene extends Scene {
 
   enter(data) {
     this.ball.reset();
+    this.showingFlash = false;
+    this.flashTimer = 0;
+    this.flashScored = false;
+    this.flashScoreline = '';
 
     if (!data) {
       if (this.mode) return;
@@ -263,8 +273,11 @@ export class GameplayScene extends Scene {
     this.opponentScore = data.opponentScore || 0;
     this.matchIntroData = data.matchIntroData || null;
 
+    this.isEventFlow = data.matchFlow === 'event';
+    this.eventType = data.eventType || null;
+
     const difficulty = data.difficulty || 'normal';
-    const maxAttempts = data.maxAttempts !== undefined ? data.maxAttempts : 5;
+    const maxAttempts = this.isEventFlow ? 1 : (data.maxAttempts !== undefined ? data.maxAttempts : 5);
 
     this.shotsTaken = 0;
     this.shotsScored = 0;
@@ -297,6 +310,29 @@ export class GameplayScene extends Scene {
     this.pauseBtn.hovered =
       Math.abs(p.x - this.pauseBtn.x) < this.pauseBtn.w / 2 &&
       Math.abs(p.y - this.pauseBtn.y) < this.pauseBtn.h / 2;
+
+    if (this.showingFlash) {
+      this.flashTimer += dt;
+      if (this.flashTimer >= QUICK_PLAY_CONFIG.goalFlashDuration) {
+        this.showingFlash = false;
+        const state = this.game.quickPlayState;
+        if (state.eventIndex >= state.events.length) {
+          this.game.sceneManager.switchTo('MatchClock', { phase: 'fulltime' });
+        } else {
+          const prevHalf = state.events[state.eventIndex - 1].half;
+          const nextHalf = state.events[state.eventIndex].half;
+          if (prevHalf === 1 && nextHalf === 2) {
+            this.game.sceneManager.switchTo('MatchClock', { phase: 'halftime' });
+          } else {
+            this.game.sceneManager.switchTo('MatchClock', {
+              phase: 'clock',
+              previousMinute: state.events[state.eventIndex - 1].minute,
+            });
+          }
+        }
+      }
+      return;
+    }
 
     if (this.matchEnded) {
       this.matchEndTimer += dt;
@@ -370,6 +406,22 @@ export class GameplayScene extends Scene {
   }
 
   handleQuickPlayShot() {
+    if (this.isEventFlow) {
+      const state = this.game.quickPlayState;
+      const scored = this.shotsScored > 0;
+      if (scored) {
+        state.playerScore++;
+      }
+      state.lastResult = { scored, scoreline: `${state.playerScore} - ${state.opponentScore}` };
+      state.eventIndex++;
+
+      this.flashScored = scored;
+      this.flashScoreline = `${state.playerScore} - ${state.opponentScore}`;
+      this.flashTimer = 0;
+      this.showingFlash = true;
+      return;
+    }
+
     const maxAttempts = this.modeConfig?.maxAttempts;
     if (maxAttempts !== null && this.shotsTaken >= maxAttempts) {
       this.matchEnded = true;
@@ -443,6 +495,10 @@ export class GameplayScene extends Scene {
 
     if (this.shotsTaken === 0) {
       this.renderSwipeTutorial(ctx);
+    }
+
+    if (this.showingFlash) {
+      this.renderGoalFlash(ctx);
     }
   }
 
@@ -571,6 +627,43 @@ export class GameplayScene extends Scene {
     ctx.stroke();
     drawGlowingText(ctx, 'FLICK OR DRAG BALL UPWARDS TO SHOOT', 960, 960,
       'bold 16px Space Grotesk, monospace', COLORS.white, 'rgba(0,0,0,0.5)', 8);
+    ctx.restore();
+  }
+
+  renderGoalFlash(ctx) {
+    ctx.save();
+    const progress = Math.min(1, this.flashTimer / QUICK_PLAY_CONFIG.goalFlashDuration);
+    const alpha = progress < 0.15
+      ? progress / 0.15
+      : progress > 0.7
+        ? 1 - (progress - 0.7) / 0.3
+        : 1;
+
+    ctx.fillStyle = `rgba(0, 0, 0, ${0.4 * alpha})`;
+    ctx.fillRect(0, 0, 1920, 1080);
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    if (this.flashScored) {
+      ctx.font = '900 80px Outfit, sans-serif';
+      ctx.shadowColor = 'rgba(16, 185, 129, 0.5)';
+      ctx.shadowBlur = 40 * alpha;
+      ctx.fillStyle = `rgba(16, 185, 129, ${alpha})`;
+      ctx.fillText('GOAL!', 960, 420);
+
+      ctx.shadowBlur = 0;
+      ctx.font = 'bold 40px Outfit, sans-serif';
+      ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+      ctx.fillText(this.flashScoreline, 960, 510);
+    } else {
+      ctx.font = '900 72px Outfit, sans-serif';
+      ctx.shadowColor = 'rgba(239, 68, 68, 0.4)';
+      ctx.shadowBlur = 30 * alpha;
+      ctx.fillStyle = `rgba(239, 68, 68, ${alpha})`;
+      ctx.fillText('MISSED', 960, 420);
+    }
+
     ctx.restore();
   }
 

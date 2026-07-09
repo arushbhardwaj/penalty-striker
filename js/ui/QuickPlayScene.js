@@ -3,6 +3,7 @@ import { COLORS } from '../config.js';
 import { MenuButton } from './MenuButton.js';
 import { TEAMS } from '../data/teams.js';
 import { SaveManager } from '../systems/save.js';
+import { generateQuickPlayEvents } from '../core/MatchEventScheduler.js';
 
 const DIFFICULTY_KEY = 'penalty_qp_difficulty';
 
@@ -373,12 +374,23 @@ export class QuickPlaySetupScene extends Scene {
   _startMatch() {
     if (!this.playerTeam || !this.opponentTeam) return;
     this.game.soundManager.playSound('click');
-    this.game.sceneManager.switchTo('Gameplay', {
-      mode: 'quickplay',
-      difficulty: this.selectedDifficulty,
+
+    const events = generateQuickPlayEvents();
+
+    this.game.quickPlayState = {
+      events,
+      eventIndex: 0,
+      playerScore: 0,
+      opponentScore: 0,
       playerTeam: this.playerTeam,
       opponentTeam: this.opponentTeam,
-      maxAttempts: 5,
+      difficulty: this.selectedDifficulty,
+      lastResult: null,
+    };
+
+    this.game.sceneManager.switchTo('MatchClock', {
+      phase: 'clock',
+      previousMinute: 0,
     });
   }
 

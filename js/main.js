@@ -5,6 +5,7 @@ import { GameplayScene } from './game.js';
 import { TournamentMenuScene, TournamentTeamSelectScene, TournamentMatchIntroScene, TournamentHubScene } from './ui/TournamentScene.js';
 import { QuickPlaySetupScene } from './ui/QuickPlayScene.js';
 import { PracticeSetupScene } from './ui/PracticeScene.js';
+import { MatchClockScene } from './ui/MatchClockScene.js';
 
 window.addEventListener('load', () => {
   const game = new Game();
@@ -25,6 +26,7 @@ window.addEventListener('load', () => {
     { name: 'QuickPlaySetup', instance: new QuickPlaySetupScene(game) },
     { name: 'QuickPlayResult', instance: new QuickPlayResultScene(game) },
     { name: 'PracticeSetup', instance: new PracticeSetupScene(game) },
+    { name: 'MatchClock', instance: new MatchClockScene(game) },
   ]);
 
   game.start('Loading');
