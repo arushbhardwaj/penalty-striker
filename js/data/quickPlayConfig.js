@@ -1,5 +1,5 @@
 export const QUICK_PLAY_CONFIG = {
-  eventCount: { min: 3, max: 4 },
+  eventCount: { min: 4, max: 5 },
 
   eventTypeWeights: {
     FREE_KICK: 0.7,
